@@ -1,0 +1,225 @@
+---
+title: "Pre_Assessment_03"
+author: "John-Philipp Vogt"
+date: "14/04/2022"
+output: 
+  ioslides_presentation: 
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Recap
+
+-   National Data on SARS-CoV-2 Infections in Germany (Hamburg)
+
+-   12 variables denoting
+
+    -   location
+    -   demographics
+    -   timestamps
+    -   'cardinalities' (Amount of cases in a case-group)
+    -   status
+
+-   official open data set by the Federal Health Agency (RKI)
+
+## Intermediate goal
+
+<center>
+
+![](ratm.jpg)
+
+</center>
+
+## All the metrics!
+
+-   total cases
+-   total deaths
+-   total recoveries
+-   active cases
+-   7-day average(s)
+-   daily (new) cases/average(s)
+-   metrics per sex
+-   metrics per age-bracket
+
+## Other questions I want to answer
+
+-   What is the most popular day to get sick?
+
+-   What is the most popular day to tell your doctor?
+
+-   How likely are you to die from the CoViD?
+
+-   Who actually dies from the CoViD?
+
+-   Is there a functional relationship between infections and
+
+    -   population density and
+    -   age?
+
+-   What time was the worst and what was the best (since 2020)
+
+## Data Prep
+Just to be sure:
+
+```{r echo=TRUE}
+library(tidyverse)
+```
+
+## Data Prep
+Reading the data:
+
+```{r echo=TRUE}
+inf_FRG <- read_csv("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Aktuell_Deutschland_SarsCov2_Infektionen.csv")
+```
+
+## Data Prep
+Translating variables:
+
+```{r echo=TRUE}
+inf_FRG <- rename(inf_FRG, geo_ID = IdLandkreis)
+inf_FRG <- rename(inf_FRG, age_group = Altersgruppe)
+inf_FRG <- rename(inf_FRG, sex = Geschlecht)
+inf_FRG <- rename(inf_FRG, rep_date = Meldedatum)
+inf_FRG <- rename(inf_FRG, ref_date = Refdatum)
+inf_FRG <- rename(inf_FRG, ref_rep_date = IstErkrankungsbeginn)
+inf_FRG <- rename(inf_FRG, amount_case = AnzahlFall)
+inf_FRG <- rename(inf_FRG, amount_death = AnzahlTodesfall)
+inf_FRG <- rename(inf_FRG, amount_recovery = AnzahlGenesen)
+inf_FRG <- rename(inf_FRG, new_case = NeuerFall)
+inf_FRG <- rename(inf_FRG, new_death = NeuerTodesfall)
+inf_FRG <- rename(inf_FRG, new_recovery = NeuGenesen)
+```
+
+## Data Prep
+Changing some data types:
+
+```{r echo=TRUE}
+inf_FRG$age_group <- as.factor(inf_FRG$age_group)
+inf_FRG$sex <- as.factor(inf_FRG$sex)
+inf_FRG$ref_rep_date <- as.logical(inf_FRG$ref_rep_date)
+```
+
+Filtering out Hamburg:
+
+```{r echo=TRUE}
+inf_HH <- inf_FRG %>% filter(geo_ID == 2000)
+```
+
+## Data Prep
+Glancing at the data:
+
+```{r echo=TRUE}
+slice_sample(inf_HH, n = 7)
+```
+## All the metrics! - part 2
+### Total cases
+
+```{r echo=TRUE}
+inf_HH %>% select(ref_date, amount_case) %>% arrange(ref_date) %>% 
+           mutate(cumulative_cases = cumsum(amount_case)) %>% slice_tail()
+```
+## All the metrics! - part 2
+### Total cases
+
+```{r}
+inf_HH_cuml_ref <- inf_HH %>% select(ref_date, amount_case) %>%
+                              arrange(ref_date) %>%
+                              mutate(cumulative_cases = cumsum(amount_case))
+ggplot(inf_HH_cuml_ref, aes(x = ref_date, y = cumulative_cases)) + geom_line()
+```
+
+## All the metrics! - part 2
+### Total deaths
+
+```{r echo=TRUE}
+inf_HH %>% select(ref_date, amount_death) %>% arrange(ref_date) %>%
+           mutate(cumulative_deaths = cumsum(amount_death)) %>% slice_tail()
+```
+
+## All the metrics! - part 2
+### Total deaths
+
+```{r}
+deaths_HH_cuml_ref <- inf_HH %>% select(ref_date, amount_death) %>%
+                              arrange(ref_date) %>%
+                              mutate(cumulative_deaths = cumsum(amount_death))
+ggplot(deaths_HH_cuml_ref, aes(x = ref_date, y = cumulative_deaths)) + geom_line()
+```
+
+
+## All the metrics! - part 2
+### Total recoveries
+
+```{r echo=TRUE}
+inf_HH %>% select(ref_date, amount_recovery) %>% arrange(ref_date) %>%
+           mutate(cumulative_recoveries = cumsum(amount_recovery)) %>%
+           slice_tail()
+```
+
+## All the metrics! - part 2
+### Total recoveries
+
+```{r}
+recoveries_HH_cuml_ref <- inf_HH %>% select(ref_date, amount_recovery) %>%
+                              arrange(ref_date) %>%
+                              mutate(cumulative_recoveries =
+                                     cumsum(amount_recovery))
+ggplot(recoveries_HH_cuml_ref, aes(x = ref_date, y = cumulative_recoveries)) + geom_line()
+```
+
+
+## All the metrics! - part 2                
+### Active cases
+
+```{r echo=TRUE}
+inf_HH %>% summarise(active_cases = sum(amount_case - amount_death - amount_recovery))
+```
+
+
+## All the metrics! - part 2
+### 7-day average(s)
+
+
+
+## All the metrics! - part 2
+### Daily (new) cases/averages
+
+
+
+## All the metrics! - part 2
+### Metrics per sex
+
+
+
+## All the metrics! - part 2
+### Metrics per age-bracket
+
+
+
+## Issues
+### rStudio
+- RAM issue solved (<3 dplyr, largely)
+
+### Data set
+- internal logic/mechanics are pretty clear -> intuition largely verified (how it works)
+- external logic not so much -> no intuition, and cannot verify (why it works like that)
+
+### Thoughts2Code
+- getting more and more acquainted with tidyverse (praised be dplyr!)
+- can test more and more assumptions because I know how to translate thoughts2code
+
+## Issues
+### What questions to answer
+- not a problem as such, but preparing the data to do so is an issue
+
+### Key-Issues:
+1) Thoughts2Code (getting better, though)
+2) External Logic of the Data Set leads to biased assumptions
+    -  can't find documentation that explains anything outside the actual mechanics
+
+### Current Issue:
+- I have to merge specific configurations of observations from 373 `.csv` files which also have to be pre-filtered
+

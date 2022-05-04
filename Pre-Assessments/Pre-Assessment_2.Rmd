@@ -1,0 +1,221 @@
+---
+title: "Pre-Assessment_02"
+author: "John-Philipp Vogt"
+date: "22/03/2022"
+output: 
+  ioslides_presentation: 
+    widescreen: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## What the data? - data source
+
+-   RKI =\> Robert Koch Institute
+
+-   "SARS-CoV-2_Infektionen_in_Deutschland"
+
+![Robert Koch 1842 - 1910](RobertKoch_cropped.jpg){width="250"}
+
+## What the data?! - context
+
+-   Roughly: Documents recorded and transmitted infection for the whole of the FRG
+
+-   updated at least once in 24h
+
+-   1 *.csv*-file cumulating all cases up to that point
+
+-   UTF-8 for symbols
+
+-   ISO8601 for date
+
+-   public record available at
+
+    -   <https://github.com/orgs/robert-koch-institut/repositories>
+
+-   maintained centrally and internally
+
+## What the data?! - sneak peek
+
+```{r, echo = TRUE}
+wk_5_inf <- data.table::fread("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Aktuell_Deutschland_SarsCov2_Infektionen.csv")
+head(wk_5_inf, 1)
+```
+
+-   location
+-   demographics
+-   timestamps
+-   'cardinalities'
+-   status
+
+## What the data?! - variables
+
+### [**Location Indicator(s)**]{.underline}
+
+#### **IdLandkreis**
+
+-   4 - 6 digit codes shows where case has been reported from
+
+-   breaks data down by **location**
+
+    1.  Federal State
+    2.  Region
+    3.  Municipality
+
+## What the data?! - variables
+
+### [**Demographic Indicators**]{.underline}
+
+#### **Altersgruppe**
+
+-   breaks data down by **age brackets**
+-   E.g.: 'A15-A34' means recorded cases in that row are within that bracket
+-   'unbekannt' -\> uknown
+-   There are 7 age brackets: 0-4, 5-14, 15-34, 35-59, 60-79, 80+, unknown
+
+#### **Geschlecht**
+
+-   breaks data down by **sex**
+-   E.g.: M -\> male; W -\> female; (unbekannt) -\> uknown
+
+## What the data?! - variables
+
+### [**Temporals**]{.underline}
+
+#### **Meldedatum**
+
+-   breaks data down by **date of infection *report***
+-   I.e.: When the local health authority was made aware of the infection
+
+#### **Refdatum**
+
+-   breaks data down by **date of infection**
+-   I.e.: When the disease was first confirmed
+-   Needn't necessarily coincide with *Meldedatum*
+
+#### **IstErkankungsbeginn**
+
+-   binary indicator if ***Meldedatum*** **== *Refdatum***
+
+## What the data?! - variables
+
+### [**Cardinality**]{.underline}
+
+#### **AnzahlFall**
+
+-   **Amount if infections** in a corresponding case-group
+
+#### **AnzahlTodesfall**
+
+-   **Amount of deaths** in a corresponding case-group
+
+#### **AnzahlGenesen**
+
+-   **Amount of recoveries** in a corresponding case-group
+
+NB: negative numbers are corrections of previously wrongly reported incidents
+
+## What the data?! - variables
+
+### [**Status**]{.underline}
+
+-   Updates the status of existing case-groups
+-   may be -1, 0, 1 or -9
+
+#### **NeuerFall**
+
+-   adds a **new infection** to a corresponding case-group
+
+#### **NeuerTodesfall**
+
+-   adds a **new death** to a corresponding case-group
+
+#### **NeuGenesen**
+
+-   adds a **new recovery** to a corresponding case-group
+
+## Reading Data - The first week of February
+
+### Loading dplyr
+
+```{r}
+library(dplyr)
+```
+
+## Reading Data - The first week of February
+
+### Importing data
+
+```{r, echo = TRUE}
+data_inf <- data.table::fread("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Aktuell_Deutschland_SarsCov2_Infektionen.csv")
+```
+
+### Filtering by city: Hamburg (IdLandkreis == 2000)
+
+```{r, echo = TRUE}
+data_inf_HH <- data_inf %>% filter(IdLandkreis == 2000)
+```
+
+### Filtering by first week of February
+
+```{r, echo = TRUE}
+data_inf_wk_5_HH <- data_inf_HH %>% filter(Meldedatum == "2022-01-31" |
+                                           Meldedatum == "2022-02-01" |
+                                           Meldedatum == "2022-02-02" |
+                                           Meldedatum == "2022-02-03" |
+                                           Meldedatum == "2022-02-04" |
+                                           Meldedatum == "2022-02-05" |
+                                           Meldedatum == "2022-02-07")
+```
+
+## Reading Data - sneak peak at the first week of February in HH
+
+```{r, echo = TRUE}
+slice_sample(data_inf_wk_5_HH, n = 3)
+
+```
+
+## Exploring the first week of February in HH
+
+### deploying ggplot2
+
+```{r, echo = TRUE}
+library(ggplot2)
+```
+
+## Exploring the first week of February in HH
+
+###### What were the amounts of reported cases per age bracket in the mean?
+
+```{r, echo = TRUE}
+ggplot(data_inf_wk_5_HH, aes(x = Altersgruppe, y = AnzahlFall)) +
+geom_bar(stat = "summary_bin", fun = mean) 
+```
+
+## Exploring the first week of February in HH
+
+##### First confirmed cases
+
+```{r, echo = TRUE}
+ggplot(data_inf_wk_5_HH, aes(x = Refdatum, y = AnzahlFall)) +
+geom_bar(stat = "summary_bin", fun = mean) 
+```
+
+
+## Exploring the first week of February in HH
+
+### Interesting Observation
+```{r, echo = TRUE}
+mean(data_inf_wk_5_HH$AnzahlFall)
+
+median(data_inf_wk_5_HH$AnzahlFall)
+```
+## Problems that I am having
+
+-   Managing RAM in RStudio...
+-   A mix between not completely getting the logic and reason of the dataset as such
+-   Serious lack of expressing my intentions in R to (dis)prove assumptions about how the dataset works
+-   Difference between how the dataset formally and informally works (assumptions and interpretation?!)
+-   Extreme high granularity of data = > long time frame for analysis needed (not really a problem)
