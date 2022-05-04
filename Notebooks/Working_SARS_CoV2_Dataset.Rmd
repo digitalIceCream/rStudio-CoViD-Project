@@ -1,0 +1,534 @@
+---
+title:  "Working_the_SARS_CoV2_Dataset"
+author: "John-Philipp Vogt"
+output: html_notebook
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+# 0 Introduction
+
+The data set is the official record of infections as provided by the [RKI](https://www.rki.de/EN/Home/homepage_node.html;jsessionid=24C74AD3D553AA571EBA67B0F313A4DF.internet111 "RKI Web page in English").
+The data set
+
+
+#### **"SARS-CoV-2_Infektionen_in_Deutschland"**
+
+
+is available on [github](https://www.github.com/robert-koch-institut "RKI github page") along with documentation in German.
+
+The first `.csv` file (time-wise) is titled "20201-04-02_Deutschland_SarsCov2_infektionen.csv".
+Therefore the data set as such is kept since April 2nd 2021, while the first infection was recorded on January 1st 2020.
+
+The purpose of this notebook is to document the student's actions taken with regards to data cleaning, correcting, reading, etc. to enforce reproducibility.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#### NB: Package dependencies
+
+```{r}
+library(tidyverse)
+```
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+## 0.1 Context - Purpose of the data set
+
+-   Roughly: Documents recorded and transmitted infections for the whole of the FRG
+
+-   updated at least once in 24h
+
+-   every day
+
+    -   1 *.csv*-file cumulating all cases up to that point is added, and
+
+    -   all existing files from the previous day(s) are kept. This results in
+
+    -   a very large data set (50GB), with a massive amount of redundancy.
+
+        -   
+
+                  (having said that: There has to be reason for it. As of now this is not clear why, but it seems it has to do with it's logic. See section 1.9. )
+
+Else:
+
+-   UTF-8 for symbols
+
+-   ISO8601 for date
+
+-   public record
+
+-   maintained centrally and internally
+
+-   consists of twelve variables breaking the data down into:
+
+    -   location
+    -   demographics
+    -   timestamps
+    -   'cardinalities' (Amount of cases in a case-group)
+    -   status
+
+The first recorded infection was on the 01.01.2020, in ***Ennepe-Ruhr-Kreis***, which is roughly 15-20km within Düsseldorf, Essen, Dortmund and Wuppertal, which form the densest populated area in Germany, if not in all of Europe.
+The first recorded infection in HH was on the 08.01.2020, merely a week later.
+
+## 0.2 Context - Brief overview of the logic of the data set
+
+In principle the data set's logic works as follows:
+
+It does not record individual cases per se.
+Each observation forms a case group.
+For each case group holds: Variables pertaining to
+
+    - location
+    - age bracket
+    - sex
+    - date(s) (all three, including the BOOLEAN one)
+
+are constant.
+
+When a case(-group) reported is received, a new row is added to the data set, each time.
+If, however, there is an existing row where
+
+    -   location
+    -   demographics
+    -   timestamps
+
+are equal to the newly reported case(-group) (i.e., where the three variable-groups are *constants*), the existing row will be updated the next day by employing the status variable-group.
+As such those new cases "carry over", and form a new observation the following day.
+The logic behind it seems to be that you can tell, for each day how many new cases have been received and processed by the RKI.
+This is then the date of *publishing*, not necessarily the date when the infection was verified or when the infection was reported as such to and by local health authorities.
+
+This also means that there are, in detail, four variables dealing with time - 3 explicit ones and one implicit one.
+
+The first temp.variable denotes on what date the infection was reported to the local health authorities.
+The second temp.variable denotes on what date the infection was verified (i.e. positive test result !?), which need not necessarily coincide.
+The third temp.variable denotes if the those dates are the same, i.e., if the exact date of infection is know.
+From there one can derive a third temp.variable.
+The time it takes for the health authorities to report their information to the RKI (implicit).
+
+Each row does **NOT** necessarily reflect one case, although that is possible.
+
+# 0.3 Brief outlining of the variables
+
+This section outlines the semantics of the variables.
+The English expression in the parentheses are the translation of the variables (see section 1.2)
+
+## [**Location Indicator(s)**]{.underline}
+
+### **IdLandkreis** (**geo_ID**)
+
+-   4 - 6 digit codes shows where case has been reported from
+
+-   breaks data down by **location**
+
+    1.  Federal State
+    2.  Region
+    3.  Municipality
+
+## [**Demographic Indicators**]{.underline}
+
+### **Altersgruppe** (**age_group**)
+
+-   breaks data down by **age brackets**
+-   E.g.: 'A15-A34' means recorded cases in that row are within that bracket
+-   'unbekannt' -\> uknown
+-   There are 7 age brackets: 0-4, 5-14, 15-34, 35-59, 60-79, 80+, unknown
+
+### **Geschlecht** (**sex**)
+
+-   breaks data down by **sex**
+-   E.g.: M -\> male; W -\> female; (unbekannt) -\> uknown
+
+## [**Temporals**]{.underline}
+
+### **Meldedatum** (**rep_date**)
+
+-   breaks data down by **date of infection *report***
+-   I.e.: When the local health authority was made aware of the infection
+
+### **Refdatum** (**ref_date**)
+
+-   breaks data down by **date of infection**
+-   I.e.: When the disease was first confirmed
+-   Needn't necessarily coincide with *Meldedatum*
+
+### **IstErkankungsbeginn** (**ref_rep_date**)
+
+-   binary indicator if ***Meldedatum*** == ***Refdatum***
+
+-   if TRUE then **ref_date** is the date of infection
+
+-   if FALSE then **rep_date** is interpreted as the date of infection
+
+i.e.: If TRUE then the actual date of infection is known, if FALSE the date of registration of infection with health authorities is interpreted as the starting date of the infection/disease.
+Thus: The variable tells if the precise infection-date is known - TRUE or FALSE respectively.
+
+## [**Cardinality**]{.underline}
+
+### **AnzahlFall** (**amount_case**)
+
+-   **Amount of infections** in a corresponding case-group
+
+-   negative numbers indicate corrections of mistakes, not recoveries
+
+### **AnzahlTodesfall** (**amount_death**)
+
+-   **Amount of deaths** in a corresponding case-group
+
+-   negative numbers indicate corrections of mistakes, not resurrections
+
+### **AnzahlGenesen** (**amount_recovery**)
+
+-   **Amount of recoveries** in a corresponding case-group
+
+-   negative numbers indicate corrections, not re-infections
+
+## [**Status**]{.underline}
+
+-   Updates the status of existing case-groups
+-   may **only** be -1, 0, 1 or -9
+
+### **NeuerFall** (**new_case**)
+
+-   adds a **new case-group**
+
+### **NeuerTodesfall** (**new_death**)
+
+-   adds **new deaths** to a corresponding case-group
+
+### **NeuGenesen** (**new_recovery**)
+
+-   adds **new recoveries** to a corresponding case-group
+
+# 1 Reading in and wrangling data
+
+This chapter reads the whole data set (always from the date of the last local repo-pull).
+Then the variables are translated, changed in type and filtered to come to a universally understandable point.
+Filtering is done to break the data down to one federal state - the city of Hamburg - to make analysis more manageable.
+All operation valid for this subset are valid for all other possible geographic subsets as well.
+
+## 1.1 Reading whole dataset in
+
+```{r echo=TRUE}
+inf_FRG <- read_csv("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Aktuell_Deutschland_SarsCov2_Infektionen.csv")
+```
+
+## 1.2 Translating variable names to english
+
+For description see section 0.3.
+
+```{r echo=TRUE}
+inf_FRG <- rename(inf_FRG, geo_ID = IdLandkreis)
+inf_FRG <- rename(inf_FRG, age_group = Altersgruppe)
+inf_FRG <- rename(inf_FRG, sex = Geschlecht)
+inf_FRG <- rename(inf_FRG, rep_date = Meldedatum)
+inf_FRG <- rename(inf_FRG, ref_date = Refdatum)
+inf_FRG <- rename(inf_FRG, ref_rep_date = IstErkrankungsbeginn)
+inf_FRG <- rename(inf_FRG, amount_case = AnzahlFall)
+inf_FRG <- rename(inf_FRG, amount_death = AnzahlTodesfall)
+inf_FRG <- rename(inf_FRG, amount_recovery = AnzahlGenesen)
+inf_FRG <- rename(inf_FRG, new_case = NeuerFall)
+inf_FRG <- rename(inf_FRG, new_death = NeuerTodesfall)
+inf_FRG <- rename(inf_FRG, new_recovery = NeuGenesen)
+```
+
+### Data sample (translated)
+
+```{r}
+slice_sample(inf_FRG, n = 10)
+```
+
+### Inspection of dataset - remarks on technical correction
+
+This data set seem remarkably clean and technically correct, and primitive in terms of options of values within variables/columns.
+
+Most variables can only be either a **specific whole number (geo_ID)** or **any whole number (positive or negative; i.e.: amount_case, amount_death, amount_recovery)**, or **only "-1, 0, 1, -9" (status-type variables; i.e.: new_case, new_death, new_recovery)**, **or binary (i.e.: ref_rep_date)**.
+
+Two need to be in date format (ref_date, rep_date), two need to be characters (better factor: i.e.: age_group, sex).
+Latter could technically be assigned a numeric value with reference to age brackets and sex.
+
+## 1.3 Determining datatypes of the 12 variables
+
+```{r}
+class(inf_FRG$geo_ID)
+# is "character" could be "factor"
+class(inf_FRG$age_group)
+# is "character" could be "factor"
+class(inf_FRG$sex)
+class(inf_FRG$rep_date)
+class(inf_FRG$ref_date)
+# is "numeric" could be "logical"
+class(inf_FRG$ref_rep_date)
+class(inf_FRG$new_case)
+class(inf_FRG$new_death)
+class(inf_FRG$new_recovery)
+class(inf_FRG$amount_case)
+class(inf_FRG$amount_death)
+class(inf_FRG$amount_recovery)
+```
+
+## 1.4 Changing data types
+
+```{r}
+inf_FRG$age_group <- as.factor(inf_FRG$age_group)
+inf_FRG$sex <- as.factor(inf_FRG$sex)
+inf_FRG$ref_rep_date <- as.logical(inf_FRG$ref_rep_date)
+```
+
+## 1.5 Double-Checking data type changes
+
+```{r}
+class(inf_FRG$age_group)
+class(inf_FRG$sex)
+class(inf_FRG$ref_rep_date)
+```
+
+## 1.6 Filtering out Hamburg
+
+For operational purposes (RAM management...), as of now (22.03.2022), the following focuses on the City-State (also Federal State) of Hamburg (HH from here on out).
+
+```{r}
+inf_HH <- inf_FRG %>% filter(geo_ID == 2000)
+```
+
+## 1.7 Data Sample (transformed as in translated and data types adjusted)
+
+```{r}
+slice_sample(inf_HH, n = 10)
+```
+
+At this point the data is clean in that each datum is
+
+-   directly recognizable as belonging to a certain variable,
+-   stored in an appropriate data type that represents its meaning in the real world,
+-   tagged with a meaningful variable-name, which is elaborated on, and
+-   each observation is in a separated row.
+
+As of now (24.03.2022) the data set has not been completely checked for
+
+-   duplicates,
+-   missing data,
+-   invalid data,
+-   bad data, or
+-   inappropriate data.
+
+However, due to the clout and importance of both data set and data set provider, the author assumes at this point (24.03.2022) that this data set is consistent, and it is treated as such.
+Once any concerns surface, this section and the data set itself will be addressed.
+
+# 1.8 Scripting the previous steps
+
+In order to automate as much manual work away as possible, and to enforce reproducibility, this section provides a script, that does all the previous steps comfortable.
+
+The script reads in a specified `.csv` and translates its variables into English. Then it changes some variable into the preferred type. It comes as a function called "RKI_imptran": It imports and transforms it's input just like above, but in a handy way. It takes a path as input, and can save the resulting tibble under a specified name using the assignment operator `<-`.
+
+```{r}
+library(tidyverse)
+
+RKI_imptran <- function(x){
+  read_csv(x, col_types = list(
+    Altersgruppe = col_factor(),
+    Geschlecht = col_factor(),
+    IstErkrankungsbeginn = col_logical()
+  )) %>%
+    rename(geo_ID = IdLandkreis,age_group = Altersgruppe,
+           sex = Geschlecht, rep_date = Meldedatum,
+           ref_date = Refdatum, ref_rep_date = IstErkrankungsbeginn,
+           amount_case = AnzahlFall, amount_death = AnzahlTodesfall,
+           amount_recovery = AnzahlGenesen, new_case = NeuerFall,
+           new_death = NeuerTodesfall, new_recovery = NeuGenesen)
+}
+```
+
+### Example
+
+` inf_FRG <- RKI_imptran(</filepath>) `
+
+Additionally, to filter out specific locations `RKI_geofil` can be used. It takes two inputs: The previously generated tibble and the respective geo_ID. For Hamburg this would be "2000".
+
+```{r}
+RKI_geofil <- function(x, y){
+  x %>% filter(geo_ID == y)
+}
+```
+
+### Example:
+`inf_HH <- RKI_geofil(inf_FRG, 2000)`
+
+# 2 Exploring and explaining the logic of the data set
+
+```{r}
+str(inf_HH)
+```
+
+## Details about the variables
+
+As exlpained above, each observation refers to one **case group**. Which means, although possible and often, each observation does not necessarily reflect individual infections.
+
+The first six variables
+
+  - geo_id,
+  - age_group,
+  - sex,
+  - rep_date,
+  - ref_date, and
+  - ref_rep_date.
+  
+are pretty straight forward. These cover the elements
+
+  - location,
+  - demographics, and
+  - timestamps
+
+see section 0.3.
+  
+What is left are the groups "cardinalities" and "status".
+
+### Cardinalities
+
+Let us recall:
+
+## [**Cardinality**]{.underline}
+
+### **AnzahlFall** (**amount_case**)
+
+-   **Amount of infections** in a corresponding case-group
+
+-   negative numbers indicate corrections of mistakes, not recoveries
+
+### **AnzahlTodesfall** (**amount_death**)
+
+-   **Amount of deaths** in a corresponding case-group
+
+-   negative numbers indicate corrections of mistakes, not resurrections
+
+### **AnzahlGenesen** (**amount_recovery**)
+
+-   **Amount of recoveries** in a corresponding case-group
+
+-   negative numbers indicate corrections, not re-infections
+
+Each variable may have any whole number, negative and positive, as a value. If they are negative, they are to be interpreted as corrections of wrongly registered events.
+
+```{r}
+inf_HH %>% select(amount_case, amount_death, amount_recovery) %>% slice_sample(n = 23)
+
+```
+
+
+Let us look at the first six months from which the first recorded infection in HH, which was on the 08.01.2020., i.e.: from January to June.
+For this purpose the ref_date variable is consulted, because it reflects the actual date of infection, and not the reporting of it.
+
+```{r}
+inf_HH_ex <- inf_HH %>% filter(between(rep_date, as.Date("2020-01-08"), as.Date("2020-03-30")))
+```
+
+# 3 Chopping up data by time - 2020, 2021, 2022
+
+For working purposes it seem useful to chop up the data set into years, perhaps even months of each year.
+For this purpose the variable **ref_date** seems more appropriate, as it should reflect the actual date of infection, rather than the date of the reporting of it.
+Both variables, **ref_date** and **rep_date** are used to create the subsets.
+
+## 3.1 Temporal Subsets by **ref_date**
+
+### 3.1.1 By year
+
+```{r}
+inf_HH_by_ref_2020 <- inf_HH %>% filter(between(ref_date, as.Date("2020-01-01"), as.Date("2020-12-31")))
+inf_HH_by_ref_2021 <- inf_HH %>% filter(between(ref_date, as.Date("2021-01-01"), as.Date("2021-12-31")))
+inf_HH_by_ref_2022 <- inf_HH %>% filter(ref_date > "2022-01-01")
+```
+
+### 3.1.2 2020 by month
+
+```{r}
+inf_HH_by_ref_2020_jan <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-01-01"), as.Date("2020-01-31")))
+inf_HH_by_ref_2020_feb <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-02-01"), as.Date("2020-02-29")))
+inf_HH_by_ref_2020_mar <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-03-01"), as.Date("2020-03-31")))
+inf_HH_by_ref_2020_apr <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-04-01"), as.Date("2020-04-30")))
+inf_HH_by_ref_2020_may <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-05-01"), as.Date("2020-05-31")))
+inf_HH_by_ref_2020_jun <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-06-01"), as.Date("2020-06-30")))
+inf_HH_by_ref_2020_jul <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-07-01"), as.Date("2020-07-31")))
+inf_HH_by_ref_2020_aug <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-08-01"), as.Date("2020-08-31")))
+inf_HH_by_ref_2020_sep <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-09-01"), as.Date("2020-09-30")))
+inf_HH_by_ref_2020_oct <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-10-01"), as.Date("2020-10-31")))
+inf_HH_by_ref_2020_nov <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-11-01"), as.Date("2020-11-30")))
+inf_HH_by_ref_2020_dec <- inf_HH_by_ref_2020 %>% filter(between(ref_date, as.Date("2020-12-01"), as.Date("2020-12-31")))
+```
+
+### 3.1.3 2021 by month
+
+```{r}
+inf_HH_by_ref_2021_jan <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-01-01"), as.Date("2021-01-31")))
+inf_HH_by_ref_2021_feb <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-02-01"), as.Date("2021-02-28")))
+inf_HH_by_ref_2021_mar <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-03-01"), as.Date("2021-03-31")))
+inf_HH_by_ref_2021_apr <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-04-01"), as.Date("2021-04-30")))
+inf_HH_by_ref_2021_may <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-05-01"), as.Date("2021-05-31")))
+inf_HH_by_ref_2021_jun <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-06-01"), as.Date("2021-06-30")))
+inf_HH_by_ref_2021_jul <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-07-01"), as.Date("2021-07-31")))
+inf_HH_by_ref_2021_aug <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-08-01"), as.Date("2021-08-31")))
+inf_HH_by_ref_2021_sep <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-09-01"), as.Date("2021-09-30")))
+inf_HH_by_ref_2021_oct <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-10-01"), as.Date("2021-10-31")))
+inf_HH_by_ref_2021_nov <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-11-01"), as.Date("2021-11-30")))
+inf_HH_by_ref_2021_dec <- inf_HH_by_ref_2021 %>% filter(between(ref_date, as.Date("2021-12-01"), as.Date("2021-12-31")))
+```
+
+### 3.1.4 2022 by month
+
+```{r}
+inf_HH_by_ref_2022_jan <- inf_HH_by_ref_2022 %>% filter(between(ref_date, as.Date("2022-01-01"), as.Date("2022-01-31")))
+inf_HH_by_ref_2022_feb <- inf_HH_by_ref_2022 %>% filter(between(ref_date, as.Date("2022-02-01"), as.Date("2022-02-28")))
+```
+
+## 3.2 Temporal Subsets by **rep_date**
+
+### 3.2.1 By year
+
+```{r}
+inf_HH_by_rep_2020 <- inf_HH %>% filter(between(rep_date, as.Date("2020-01-01"), as.Date("2020-12-31")))
+inf_HH_by_rep_2021 <- inf_HH %>% filter(between(rep_date, as.Date("2021-01-01"), as.Date("2021-12-31")))
+inf_HH_by_rep_2022 <- inf_HH %>% filter(rep_date > "2022-01-01")
+```
+
+### 3.2.2 2020 by month
+
+```{r}
+inf_HH_by_rep_2020_jan <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-01-01"), as.Date("2020-01-31")))
+inf_HH_by_rep_2020_feb <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-02-01"), as.Date("2020-02-29")))
+inf_HH_by_rep_2020_mar <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-03-01"), as.Date("2020-03-31")))
+inf_HH_by_rep_2020_apr <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-04-01"), as.Date("2020-04-30")))
+inf_HH_by_rep_2020_may <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-05-01"), as.Date("2020-05-31")))
+inf_HH_by_rep_2020_jun <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-06-01"), as.Date("2020-06-30")))
+inf_HH_by_rep_2020_jul <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-07-01"), as.Date("2020-07-31")))
+inf_HH_by_rep_2020_aug <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-08-01"), as.Date("2020-08-31")))
+inf_HH_by_rep_2020_sep <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-09-01"), as.Date("2020-09-30")))
+inf_HH_by_rep_2020_oct <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-10-01"), as.Date("2020-10-31")))
+inf_HH_by_rep_2020_nov <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-11-01"), as.Date("2020-11-30")))
+inf_HH_by_rep_2020_dec <- inf_HH_by_rep_2020 %>% filter(between(rep_date, as.Date("2020-12-01"), as.Date("2020-12-31")))
+
+```
+
+### 3.2.3 2021 by month
+
+```{r}
+inf_HH_by_rep_2021_jan <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-01-01"), as.Date("2021-01-31")))
+inf_HH_by_rep_2021_jan <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-01-01"), as.Date("2021-01-31")))
+inf_HH_by_rep_2021_feb <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-02-01"), as.Date("2021-02-28")))
+inf_HH_by_rep_2021_mar <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-03-01"), as.Date("2021-03-31")))
+inf_HH_by_rep_2021_apr <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-04-01"), as.Date("2021-04-30")))
+inf_HH_by_rep_2021_may <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-05-01"), as.Date("2021-05-31")))
+inf_HH_by_rep_2021_jun <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-06-01"), as.Date("2021-06-30")))
+inf_HH_by_rep_2021_jul <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-07-01"), as.Date("2021-07-31")))
+inf_HH_by_rep_2021_aug <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-08-01"), as.Date("2021-08-31")))
+inf_HH_by_rep_2021_sep <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-09-01"), as.Date("2021-09-30")))
+inf_HH_by_rep_2021_oct <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-10-01"), as.Date("2021-10-31")))
+inf_HH_by_rep_2021_nov <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-11-01"), as.Date("2021-11-30")))
+inf_HH_by_rep_2021_dec <- inf_HH_by_rep_2021 %>% filter(between(rep_date, as.Date("2021-12-01"), as.Date("2021-12-31")))
+```
+
+### 3.2.4 2022 by month
+
+```{r}
+inf_HH_by_rep_2022_jan <- inf_HH_by_rep_2022 %>% filter(between(rep_date, as.Date("2022-01-01"), as.Date("2022-01-31")))
+inf_HH_by_rep_2022_feb <- inf_HH_by_rep_2022 %>% filter(between(rep_date, as.Date("2022-02-01"), as.Date("2022-02-28")))
+```

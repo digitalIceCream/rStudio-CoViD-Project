@@ -1,0 +1,123 @@
+---
+title: "CoViD_in_HH_final_v0.1"
+author: "John-Philipp Vogt"
+date: "29/04/2022"
+output: html_document
+---
+
+# 0 Packages and Scripts
+
+Script runs: Load tidyverse, load `RKI_imptran`, `RKI_geofil`.
+
+```{r}
+library(tidyverse)
+
+RKI_imptran <- function(x){
+  read_csv(x, col_types = list(
+    Altersgruppe = col_factor(),
+    Geschlecht = col_factor(),
+    IstErkrankungsbeginn = col_logical()
+  )) %>%
+    rename(geo_ID = IdLandkreis,age_group = Altersgruppe,
+           sex = Geschlecht, rep_date = Meldedatum,
+           ref_date = Refdatum, ref_rep_date = IstErkrankungsbeginn,
+           amount_case = AnzahlFall, amount_death = AnzahlTodesfall,
+           amount_recovery = AnzahlGenesen, new_case = NeuerFall,
+           new_death = NeuerTodesfall, new_recovery = NeuGenesen)
+}
+
+RKI_geofil <- function(x, y){
+  x %>% filter(geo_ID == y)
+}
+```
+
+# 1 Introducing data to R
+
+Scripts runs: Load current `.csv`, run `RKI_imptran` and `RKI_geofil`.
+
+```{r}
+inf_FRG <- RKI_imptran("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Aktuell_Deutschland_SarsCov2_Infektionen.csv")
+
+inf_HH <- RKI_geofil(inf_FRG, 2000)
+```
+
+The following scripts load the `all_new_cases.csv`, which has to be computed after each `git pull` from the master-repo. The wd has to be the dir that contains the dataset.
+The `all_new_cases.csv` may be computed with `AWK` with
+
+```{AWK eval=FALSE, include=FALSE}
+ awk -F, -f all_new_cases_FRG.awk 2*.csv > all_new_cases.csv
+```
+
+where `command.awk` is
+
+```{AWK eval=FALSE, include=FALSE}
+BEGIN{printf "IdLandkreis,Altersgruppe,Geschlecht,Meldedatum,Refdatum,IstErkrankungsbeginn,NeuerFall,NeuerTodesfall,NeuGenesen,AnzahlFall,AnzahlTodesfall,AnzahlGenesen\n"} $7 == "-1" || $7 == "1" {print $0}
+```
+
+. NB: The AWK-script is computationally rather intensive!
+Then `RKI_imptran` can be invoked to read and transform `all_new_cases.csv`.
+
+```{r}
+inf_FRG_new_cases <- RKI_imptran("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Archiv/all_new_cases.csv")
+```
+
+After, to filter for desired geo-location, run:
+
+```{r}
+inf_HH_new_cases <- RKI_geofil(inf_FRG_new_cases, 2000)
+```
+
+Remark: The following are computed for Hamburg only.
+
+# 2 Rebuilding metrics
+
+Following metrics are rebuilt:
+
+1) Cumulative cases, deaths, and recoveries up to now
+2) New cases, deaths, and recoveries each day
+3) Active cases currently, and per day since start of recorded case
+
+Where sensible they are split up in by `ref_date` and `rep_date`
+
+## 2.1 Cumulative Cases
+
+### Cumulative Total of Confirmed Cases
+```{r}
+inf_HH %>%
+  transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
+  slice_tail()
+```
+
+### Cumulative Total of Confirmed Cases (Visualised)
+By `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, amount_case) %>%
+  arrange(ref_date) %>%
+  mutate(cumulative_cases = cumsum(amount_case)) %>%
+  ggplot(aes(x = ref_date, y = cumulative_cases)) + geom_line()
+```
+By `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, amount_case) %>%
+  arrange(rep_date) %>% 
+  mutate(cumulative_cases = cumsum(amount_case)) %>% 
+  ggplot(aes(x = rep_date, y = cumulative_cases)) + geom_line()
+```
+
+### Sorted by Age Bracket descending
+```{r}
+inf_HH %>%
+  group_by(age_group) %>% 
+  transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_cases))
+```
+
+### Sorted by Sex
+```{r}
+inf_HH %>%
+  group_by(sex) %>% 
+  transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_cases))
+```

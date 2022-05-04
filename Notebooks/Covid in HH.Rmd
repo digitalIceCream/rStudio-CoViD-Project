@@ -1,0 +1,337 @@
+---
+title: "Covid in HH"
+author: "John-Philipp Vogt"
+output: html_notebook
+---
+
+# 0 Packages and Scripts
+
+Script runs: Load tidyverse, load `RKI_imptran`, `RKI_geofil`.
+
+```{r}
+library(tidyverse)
+
+RKI_imptran <- function(x){
+  read_csv(x, col_types = list(
+    Altersgruppe = col_factor(),
+    Geschlecht = col_factor(),
+    IstErkrankungsbeginn = col_logical()
+  )) %>%
+    rename(geo_ID = IdLandkreis,age_group = Altersgruppe,
+           sex = Geschlecht, rep_date = Meldedatum,
+           ref_date = Refdatum, ref_rep_date = IstErkrankungsbeginn,
+           amount_case = AnzahlFall, amount_death = AnzahlTodesfall,
+           amount_recovery = AnzahlGenesen, new_case = NeuerFall,
+           new_death = NeuerTodesfall, new_recovery = NeuGenesen)
+}
+
+RKI_geofil <- function(x, y){
+  x %>% filter(geo_ID == y)
+}
+```
+
+
+# 1 Introducing data to R
+
+Scripts runs: Load current `.csv`, run `RKI_imptran` and `RKI_geofil`.
+```{r}
+inf_FRG <- RKI_imptran("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Aktuell_Deutschland_SarsCov2_Infektionen.csv")
+
+inf_HH <- RKI_geofil(inf_FRG, 2000)
+```
+The following scripts load the `all_new_cases.csv`, which has to be computed after each `git pull` from the master-repo. The wd has to be the dir that contains the dataset.
+The `all_new_cases.csv` may be computed with `AWK` with
+```{AWK eval=FALSE, include=FALSE}
+ awk -F, -f all_new_cases_FRG.awk 2*.csv > all_new_cases.csv
+```
+where `all_new_cases_FRG1.awk` is
+```{AWK eval=FALSE, include=FALSE}
+BEGIN{printf "IdLandkreis,Altersgruppe,Geschlecht,Meldedatum,Refdatum,IstErkrankungsbeginn,NeuerFall,NeuerTodesfall,NeuGenesen,AnzahlFall,AnzahlTodesfall,AnzahlGenesen\n"} $7 == "-1" || $7 == "1" {print $0}
+```
+. NB: The AWK-script is computationally rather intensive!
+Then `RKI_imptran` can be invoked to read and transform `all_new_cases.csv`.
+```{r}
+inf_FRG_new_cases <- RKI_imptran("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Archiv/all_new_cases.csv")
+```
+After, to filter for desired geo-location, run:
+```{r}
+inf_HH_new_cases <- RKI_geofil(inf_FRG_new_cases, 2000)
+```
+
+
+Remark: The following are computed for Hamburg only.
+
+# 2 Rebuilding metrics
+
+Following metrics are rebuilt:
+
+1) Cumulative cases, deaths, and recoveries up to now
+2) New cases, deaths, and recoveries each day
+3) Active cases currently, and per day since start of recorded case
+---
+## 2.1 Cumulative Cases, Deaths, and Recoveries
+
+### 2.1.1 Cumulative Total of Confirmed Cases
+```{r}
+inf_HH %>%
+  transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
+  slice_tail()
+```
+#### Sorted by Age Bracket descending
+```{r}
+inf_HH %>%
+  group_by(age_group) %>% 
+  transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_cases))
+```
+#### Sorted by Sex
+```{r}
+inf_HH %>%
+  group_by(sex) %>% 
+  transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_cases))
+```
+
+### 2.1.2 Cumulative Total of Confirmed Cases (Visualised)
+By `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, amount_case) %>%
+  arrange(ref_date) %>%
+  mutate(cumulative_cases = cumsum(amount_case)) %>%
+  ggplot(aes(x = ref_date, y = cumulative_cases)) + geom_line()
+```
+By `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, amount_case) %>%
+  arrange(rep_date) %>% 
+  mutate(cumulative_cases = cumsum(amount_case)) %>% 
+  ggplot(aes(x = rep_date, y = cumulative_cases)) + geom_line()
+```
+### 2.1.3 Cumulative Total of Confirmed Deaths
+```{r}
+inf_HH %>%
+  transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
+  slice_tail()
+```
+#### Sorted By Age Group Descending
+```{r}
+inf_HH %>% 
+  group_by(age_group) %>% 
+  transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_deaths))
+```
+#### Sorted by Sex
+```{r}
+inf_HH %>%
+  group_by(sex) %>% 
+  transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_deaths))
+```
+
+### 2.1.4 Cumulative Total of Confirmed Deaths (Visualised)
+by `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, amount_death) %>%
+  arrange(ref_date) %>%
+  mutate(cumulative_deaths = cumsum(amount_death)) %>%
+  ggplot(aes(x = ref_date, y = cumulative_deaths)) + geom_line()
+```
+by `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, amount_death) %>%
+  arrange(rep_date) %>%
+  mutate(cumulative_deaths = cumsum(amount_death)) %>%
+  ggplot(aes(x = rep_date, y = cumulative_deaths)) + geom_line()
+```
+### 2.1.5 Cumulative Total of Confirmed Recoveries
+```{r}
+inf_HH %>%
+  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
+  slice_tail()
+```
+#### Sorted by Age Group Descending
+```{r}
+inf_HH %>%
+  group_by(age_group) %>% 
+  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
+  slice_tail() %>%
+  arrange(desc(total_of_confirmed_recoveries))
+```
+#### Sorted by Sex
+```{r}
+inf_HH %>%
+  group_by(sex) %>% 
+  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_recoveries))
+```
+
+### 2.1.6 Cumulative Total of Confirmed Recoveries (Visualised)
+by `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, amount_recovery) %>%
+  arrange(ref_date) %>%
+  mutate(cumulative_recoveries = cumsum(amount_recovery)) %>%
+  ggplot(aes(x = ref_date, y = cumulative_recoveries)) + geom_line()
+```
+by `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, amount_recovery) %>%
+  arrange(rep_date) %>%
+  mutate(cumulative_recoveries = cumsum(amount_recovery)) %>%
+  ggplot(aes(x = rep_date, y = cumulative_recoveries)) + geom_line()
+```
+
+## 2.2 New Cases, Deaths, and Recoveries
+
+### 2.2.1 Currently New Cases
+This script shows the latest "new" cases as published by the RKI, which means these are those cases, which have been reported to the RKI on the previous day. Meaning they are not the most current, but those which are "officially" declared (i.e. published) by the RKI.
+By `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, new_case, starts_with("amount")) %>% 
+  filter(new_case != 0 & amount_death == 0 & amount_recovery == 0) %>% 
+  select(ref_date, amount_case) %>%
+  group_by(ref_date) %>% 
+  summarise(amount_case = sum(amount_case)) %>% arrange(desc(ref_date))
+```
+By `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, new_case, starts_with("amount")) %>% 
+  filter(new_case != 0 & amount_death == 0 & amount_recovery == 0) %>% 
+  select(rep_date, ends_with("case"))%>%
+  group_by(rep_date) %>% 
+  summarise(amount_case = sum(amount_case)) %>% 
+arrange(desc(rep_date))
+```
+### 2.2.2 Daily New Cases (Visualised)
+by `ref_date`:
+```{r}
+inf_HH_new_cases %>% select(ref_date, starts_with("amount")) %>%
+  filter(amount_death == 0 & amount_recovery == 0) %>%
+  select(ref_date, amount_case) %>%
+  group_by(ref_date) %>%
+  summarise(amount_case = sum(amount_case)) %>%
+  arrange(desc(ref_date)) %>%
+  ggplot(aes(x = ref_date, y = amount_case)) + geom_line()
+```
+by `rep_date`:
+```{r}
+inf_HH_new_cases %>% select(rep_date, starts_with("amount")) %>%
+  filter(amount_death == 0 & amount_recovery == 0) %>%
+  select(rep_date, amount_case) %>%
+  group_by(rep_date) %>%
+  summarise(amount_case = sum(amount_case)) %>%
+  arrange(desc(rep_date)) %>%
+  ggplot(aes(x = rep_date, y = amount_case)) + geom_line()
+```
+### 2.2.2 Currently New Deaths
+by `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, new_case, amount_death) %>% 
+  filter(new_case != 0) %>% 
+  select(ref_date, amount_death) %>%
+  group_by(ref_date) %>% 
+  summarise(amount_death = sum(amount_death)) %>%
+  arrange(desc(ref_date))
+```
+by `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, new_case, amount_death) %>% 
+  filter(new_case != 0) %>% 
+  select(rep_date, amount_death) %>%
+  group_by(rep_date) %>% 
+  summarise(amount_death = sum(amount_death)) %>%
+  arrange(desc(rep_date))
+```
+
+
+### 2.2.3 Daily New Deaths
+by `ref_date`:
+```{r}
+inf_HH_new_cases %>% select(ref_date, amount_death) %>%
+  filter(amount_death != 0) %>% 
+  group_by(ref_date) %>%
+  summarise(amount_death = sum(amount_death)) %>% 
+  arrange(desc(ref_date)) %>% 
+  ggplot(aes(x = ref_date, y = amount_death)) + geom_line()
+```
+by `rep_date`:
+```{r}
+inf_HH_new_cases %>% select(rep_date, amount_death) %>%
+  filter(amount_death != 0) %>% 
+  group_by(rep_date) %>%
+  summarise(amount_death = sum(amount_death)) %>% 
+  arrange(desc(rep_date)) %>% 
+  ggplot(aes(x = rep_date, y = amount_death)) + geom_line()
+```
+### 2.2.3 Currently New Recoveries
+by `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, new_case, amount_recovery) %>% 
+  filter(new_case != 0) %>% 
+  select(ref_date, amount_recovery) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>% 
+  arrange(desc(ref_date))
+```
+by `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, new_case, amount_recovery) %>% 
+  filter(new_case != 0) %>% 
+  select(rep_date, amount_recovery) %>% 
+  group_by(rep_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>% 
+  arrange(desc(rep_date))
+```
+
+
+### 2.2.4 Daily New Recoveries
+by `ref_date`:
+```{r}
+inf_HH_new_cases %>% select(ref_date, amount_recovery) %>% 
+  filter(amount_recovery != 0) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>% 
+  arrange(desc(ref_date)) %>% 
+  ggplot(aes(x = ref_date, y = amount_recovery)) + geom_line()
+
+```
+by `rep_date`:
+```{r}
+inf_HH_new_cases %>% select(rep_date, amount_recovery) %>% 
+  filter(amount_recovery != 0) %>% 
+  group_by(rep_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>% 
+  arrange(desc(rep_date)) %>% 
+  ggplot(aes(x = rep_date, y = amount_recovery)) + geom_line()
+```
+## 2.3 Active Cases
+
+by `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, new_case, starts_with("amount")) %>% 
+  arrange(ref_date) %>% 
+  mutate(cumulative_cases = cumsum(amount_case)) %>% 
+  mutate(cumulative_deaths = cumsum(amount_death)) %>% 
+  mutate(cumulative_recoveries = cumsum(amount_recovery)) %>% 
+  mutate(delta = cumulative_cases - (cumulative_deaths + cumulative_recoveries)) %>%
+  select(ref_date, starts_with("c"), delta) %>%
+  slice_tail()
+```
+by `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, new_case, starts_with("amount")) %>% 
+  arrange(rep_date) %>% 
+  mutate(cumulative_cases = cumsum(amount_case)) %>% 
+  mutate(cumulative_deaths = cumsum(amount_death)) %>% 
+  mutate(cumulative_recoveries = cumsum(amount_recovery)) %>% 
+  mutate(delta = cumulative_cases - (cumulative_deaths + cumulative_recoveries)) %>%
+  select(rep_date, starts_with("c"), delta) %>% 
+  slice_tail()
+```
+
+
