@@ -104,6 +104,33 @@ inf_HH %>% select(rep_date, amount_case) %>%
   ggplot(aes(x = rep_date, y = cumulative_cases)) + geom_line()
 ```
 
+### Cumulative Total of Confirmed Cases by Age Bracket (Visualised)
+by `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, age_group, amount_case) %>%
+  group_by(age_group) %>%
+  arrange(ref_date) %>%
+  mutate(case_totals_by_age_group = cumsum(amount_case)) %>%
+  ggplot(aes(x = ref_date, y = case_totals_by_age_group, fill = age_group)) +
+  geom_area()
+```
+by `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, age_group, amount_case) %>%
+  group_by(age_group) %>%
+  arrange(rep_date) %>%
+  mutate(case_totals_by_age_group = cumsum(amount_case)) %>%
+  ggplot(aes(x = rep_date, y = case_totals_by_age_group, fill = age_group)) +
+  geom_area()
+```
+### Total of Confirmed Cases by Age Bracket (Visualised)
+```{r}
+inf_HH %>% select(age_group, amount_case) %>%
+  group_by(age_group) %>%
+  summarise(sum = sum(amount_case)) %>%
+  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col()
+```
+
 ### Sorted by Age Bracket descending
 ```{r}
 inf_HH %>%
@@ -111,6 +138,25 @@ inf_HH %>%
   transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
   slice_tail() %>% 
   arrange(desc(total_of_confirmed_cases))
+```
+### Cumulative Total of Confirmed Cases by Sex (Visualised)
+By `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, sex, amount_case) %>%
+    group_by(sex) %>%
+    arrange(ref_date) %>%
+    mutate(case_totals_by_sex = cumsum(amount_case)) %>%
+    ggplot(aes(x = ref_date, y = case_totals_by_sex, fill = sex)) +
+    geom_area()
+```
+By `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, sex, amount_case) %>%
+    group_by(sex) %>%
+    arrange(rep_date) %>%
+    mutate(case_totals_by_sex = cumsum(amount_case)) %>%
+    ggplot(aes(x = rep_date, y = case_totals_by_sex, fill = sex)) +
+    geom_area()
 ```
 
 ### Sorted by Sex
