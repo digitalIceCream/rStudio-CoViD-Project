@@ -1,0 +1,1 @@
+BEGIN{printf "IdLandkreis,Altersgruppe,Geschlecht,Meldedatum,Refdatum,IstErkrankungsbeginn,NeuerFall,NeuerTodesfall,NeuGenesen,AnzahlFall,AnzahlTodesfall,AnzahlGenesen\n"} $7 == "-1" || $7 == "1" {print $0}
