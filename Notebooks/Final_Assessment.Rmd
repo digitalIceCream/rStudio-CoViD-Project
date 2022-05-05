@@ -7,10 +7,11 @@ output: html_document
 
 # 0 Packages and Scripts
 
-Script runs: Load tidyverse, load `RKI_imptran`, `RKI_geofil`.
+Script runs: Load `tidyverse`, load `RKI_imptran`, `RKI_geofil`, `df_age_bracket_ref_date` and `df_age_bracket_rep_date`.
 
 ```{r}
 library(tidyverse)
+library(gridExtra)
 
 RKI_imptran <- function(x){
   read_csv(x, col_types = list(
@@ -29,6 +30,602 @@ RKI_imptran <- function(x){
 RKI_geofil <- function(x, y){
   x %>% filter(geo_ID == y)
 }
+
+df_age_brackets_ref_date <- function(){
+  A0 <- inf_HH %>% select(ref_date, age_group, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "unbekannt") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A1 <- inf_HH %>% select(ref_date, age_group, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A00-A04") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A2 <- inf_HH %>% select(ref_date, age_group, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A05-A14") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A3 <- inf_HH %>% select(ref_date, age_group, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A15-A34") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A4 <- inf_HH %>% select(ref_date, age_group, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A35-A59") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A5 <- inf_HH %>% select(ref_date, age_group, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A60-A79") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A6 <- inf_HH %>% select(ref_date, age_group, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A80+") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+    rbind(A0, A1, A2, A3, A4, A5, A6)
+}
+
+df_age_brackets_rep_date <- function(){
+  A0 <- inf_HH %>% select(rep_date, age_group, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "unbekannt") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A1 <- inf_HH %>% select(rep_date, age_group, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A00-A04") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A2 <- inf_HH %>% select(rep_date, age_group, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A05-A14") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A3 <- inf_HH %>% select(rep_date, age_group, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A15-A34") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A4 <- inf_HH %>% select(rep_date, age_group, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A35-A59") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A5 <- inf_HH %>% select(rep_date, age_group, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A60-A79") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  A6 <- inf_HH %>% select(rep_date, age_group, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(age_group == "A80+") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  rbind(A0, A1, A2, A3, A4, A5, A6)
+}
+
+df_sex_ref_date <- function(){
+  
+  M <- inf_HH %>% select(ref_date, sex, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(sex == "M") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+
+  W <- inf_HH %>% select(ref_date, sex, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(sex == "W") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+
+  unbekannt <- inf_HH %>% select(ref_date, sex, amount_case) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(sex == "unbekannt") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+
+  df_sex_ref_date <- rbind(M, W, unbekannt)
+}
+
+df_sex_rep_date <- function(){
+  
+  M <- inf_HH %>% select(rep_date, sex, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(sex == "M") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  W <- inf_HH %>% select(rep_date, sex, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(sex == "W") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  unbekannt <- inf_HH %>% select(rep_date, sex, amount_case) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_case = sum(amount_case)) %>% 
+    ungroup %>% 
+    filter(sex == "unbekannt") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_case))
+  
+  df_sex_rep_date <- rbind(M, W, unbekannt)
+}
+
+df_age_brackets_ref_date_deaths <- function(){
+  A0 <- inf_HH %>% select(ref_date, age_group, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "unbekannt") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A1 <- inf_HH %>% select(ref_date, age_group, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A00-A04") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A2 <- inf_HH %>% select(ref_date, age_group, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A05-A14") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A3 <- inf_HH %>% select(ref_date, age_group, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A15-A34") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A4 <- inf_HH %>% select(ref_date, age_group, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A35-A59") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A5 <- inf_HH %>% select(ref_date, age_group, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A60-A79") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A6 <- inf_HH %>% select(ref_date, age_group, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A80+") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  rbind(A0, A1, A2, A3, A4, A5, A6)
+}
+
+df_age_brackets_rep_date_deaths <- function(){
+  A0 <- inf_HH %>% select(rep_date, age_group, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "unbekannt") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A1 <- inf_HH %>% select(rep_date, age_group, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A00-A04") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A2 <- inf_HH %>% select(rep_date, age_group, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A05-A14") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A3 <- inf_HH %>% select(rep_date, age_group, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A15-A34") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A4 <- inf_HH %>% select(rep_date, age_group, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A35-A59") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A5 <- inf_HH %>% select(rep_date, age_group, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A60-A79") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  A6 <- inf_HH %>% select(rep_date, age_group, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(age_group == "A80+") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  rbind(A0, A1, A2, A3, A4, A5, A6)
+}
+
+df_sex_ref_date_deaths <- function(){
+  
+  M <- inf_HH %>% select(ref_date, sex, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(sex == "M") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  W <- inf_HH %>% select(ref_date, sex, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(sex == "W") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  unbekannt <- inf_HH %>% select(ref_date, sex, amount_death) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(sex == "unbekannt") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+    rbind(M, W, unbekannt)
+}
+
+df_sex_rep_date_deaths <- function(){
+  
+  M <- inf_HH %>% select(rep_date, sex, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(sex == "M") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  W <- inf_HH %>% select(rep_date, sex, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(sex == "W") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  unbekannt <- inf_HH %>% select(rep_date, sex, amount_death) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_death = sum(amount_death)) %>% 
+    ungroup %>% 
+    filter(sex == "unbekannt") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_death))
+  
+  rbind(M, W, unbekannt)
+}
+
+df_age_brackets_ref_date_recoveries <- function(){
+  A0 <- inf_HH %>% select(ref_date, age_group, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "unbekannt") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A1 <- inf_HH %>% select(ref_date, age_group, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A00-A04") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A2 <- inf_HH %>% select(ref_date, age_group, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A05-A14") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A3 <- inf_HH %>% select(ref_date, age_group, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A15-A34") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A4 <- inf_HH %>% select(ref_date, age_group, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A35-A59") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A5 <- inf_HH %>% select(ref_date, age_group, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A60-A79") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A6 <- inf_HH %>% select(ref_date, age_group, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A80+") %>%
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  rbind(A0, A1, A2, A3, A4, A5, A6)
+}
+
+df_age_brackets_rep_date_recoveries <- function(){
+  A0 <- inf_HH %>% select(rep_date, age_group, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "unbekannt") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A1 <- inf_HH %>% select(rep_date, age_group, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A00-A04") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A2 <- inf_HH %>% select(rep_date, age_group, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A05-A14") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A3 <- inf_HH %>% select(rep_date, age_group, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A15-A34") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A4 <- inf_HH %>% select(rep_date, age_group, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A35-A59") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A5 <- inf_HH %>% select(rep_date, age_group, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A60-A79") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  A6 <- inf_HH %>% select(rep_date, age_group, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, age_group) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(age_group == "A80+") %>%
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  rbind(A0, A1, A2, A3, A4, A5, A6)
+}
+
+df_sex_ref_date_recoveries <- function(){
+  
+  M <- inf_HH %>% select(ref_date, sex, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(sex == "M") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  W <- inf_HH %>% select(ref_date, sex, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(sex == "W") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  unbekannt <- inf_HH %>% select(ref_date, sex, amount_recovery) %>% 
+    arrange(ref_date) %>% 
+    group_by(ref_date, sex) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(sex == "unbekannt") %>% 
+    arrange(ref_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  rbind(M, W, unbekannt)
+}
+
+df_sex_rep_date_recoveries <- function(){
+  
+  M <- inf_HH %>% select(rep_date, sex, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(sex == "M") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  W <- inf_HH %>% select(rep_date, sex, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(sex == "W") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  unbekannt <- inf_HH %>% select(rep_date, sex, amount_recovery) %>% 
+    arrange(rep_date) %>% 
+    group_by(rep_date, sex) %>% 
+    summarise(amount_recovery = sum(amount_recovery)) %>% 
+    ungroup %>% 
+    filter(sex == "unbekannt") %>% 
+    arrange(rep_date) %>% 
+    mutate(cum_cases = cumsum(amount_recovery))
+  
+  rbind(M, W, unbekannt)
+}
+
+
 ```
 
 # 1 Introducing data to R
@@ -84,7 +681,7 @@ Where sensible they are split up in by `ref_date` and `rep_date`
 ### Cumulative Total of Confirmed Cases
 ```{r}
 inf_HH %>%
-  transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
+  transmute(total_of_confirmed_cases = sum(amount_case)) %>%
   slice_tail()
 ```
 
@@ -92,46 +689,37 @@ inf_HH %>%
 By `ref_date`:
 ```{r}
 inf_HH %>% select(ref_date, amount_case) %>%
-  arrange(ref_date) %>%
+  arrange(ref_date) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_case = sum(amount_case)) %>%
   mutate(cumulative_cases = cumsum(amount_case)) %>%
-  ggplot(aes(x = ref_date, y = cumulative_cases)) + geom_line()
+  ggplot(aes(ref_date, cumulative_cases)) + geom_area()
+
+cum_tot_ref_date <- inf_HH %>% select(ref_date, amount_case) %>%
+  arrange(ref_date) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_case = sum(amount_case)) %>%
+  mutate(cumulative_cases = cumsum(amount_case)) %>%
+  ggplot(aes(ref_date, cumulative_cases)) + geom_area()
 ```
 By `rep_date`:
 ```{r}
 inf_HH %>% select(rep_date, amount_case) %>%
   arrange(rep_date) %>% 
-  mutate(cumulative_cases = cumsum(amount_case)) %>% 
-  ggplot(aes(x = rep_date, y = cumulative_cases)) + geom_line()
+  group_by(rep_date) %>% 
+  summarise(amount_case = sum(amount_case)) %>%
+  mutate(cumulative_cases = cumsum(amount_case)) %>%
+  ggplot(aes(rep_date, cumulative_cases)) + geom_area()
+
+cum_tot_rep_date <- inf_HH %>% select(rep_date, amount_case) %>%
+  arrange(rep_date) %>% 
+  group_by(rep_date) %>% 
+  summarise(amount_case = sum(amount_case)) %>%
+  mutate(cumulative_cases = cumsum(amount_case)) %>%
+  ggplot(aes(rep_date, cumulative_cases)) + geom_area()
 ```
 
-### Cumulative Total of Confirmed Cases by Age Bracket (Visualised)
-by `ref_date`:
-```{r}
-inf_HH %>% select(ref_date, age_group, amount_case) %>%
-  group_by(age_group) %>%
-  arrange(ref_date) %>%
-  mutate(case_totals_by_age_group = cumsum(amount_case)) %>%
-  ggplot(aes(x = ref_date, y = case_totals_by_age_group, fill = age_group)) +
-  geom_area()
-```
-by `rep_date`:
-```{r}
-inf_HH %>% select(rep_date, age_group, amount_case) %>%
-  group_by(age_group) %>%
-  arrange(rep_date) %>%
-  mutate(case_totals_by_age_group = cumsum(amount_case)) %>%
-  ggplot(aes(x = rep_date, y = case_totals_by_age_group, fill = age_group)) +
-  geom_area()
-```
-### Total of Confirmed Cases by Age Bracket (Visualised)
-```{r}
-inf_HH %>% select(age_group, amount_case) %>%
-  group_by(age_group) %>%
-  summarise(sum = sum(amount_case)) %>%
-  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col()
-```
-
-### Sorted by Age Bracket descending
+### Cumulative Total of Confirmed Cases by Age Bracket
 ```{r}
 inf_HH %>%
   group_by(age_group) %>% 
@@ -139,31 +727,309 @@ inf_HH %>%
   slice_tail() %>% 
   arrange(desc(total_of_confirmed_cases))
 ```
-### Cumulative Total of Confirmed Cases by Sex (Visualised)
-By `ref_date`:
+
+### Cumulative Total of Confirmed Cases by Age Bracket (Visualised)
+by `ref_date`:
 ```{r}
-inf_HH %>% select(ref_date, sex, amount_case) %>%
-    group_by(sex) %>%
-    arrange(ref_date) %>%
-    mutate(case_totals_by_sex = cumsum(amount_case)) %>%
-    ggplot(aes(x = ref_date, y = case_totals_by_sex, fill = sex)) +
-    geom_area()
+AAll_ref_date <- df_age_brackets_ref_date()
+
+AAll_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area()
+
+AAllplot_ref_date <- AAll_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
+
 ```
-By `rep_date`:
+### Total and by Age Bracket - Side-by-Side
 ```{r}
-inf_HH %>% select(rep_date, sex, amount_case) %>%
-    group_by(sex) %>%
-    arrange(rep_date) %>%
-    mutate(case_totals_by_sex = cumsum(amount_case)) %>%
-    ggplot(aes(x = rep_date, y = case_totals_by_sex, fill = sex)) +
-    geom_area()
+grid.arrange(cum_tot_ref_date, AAllplot_ref_date, nrow = 2)
 ```
 
-### Sorted by Sex
+by `rep_date`:
+```{r}
+AAll_rep_date <- df_age_brackets_rep_date()
+
+AAll_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area()
+
+AAllplot_rep_date <- AAll_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
+```
+### Total and by Age Bracket - Side-by-Side
+```{r}
+grid.arrange(cum_tot_rep_date, AAllplot_rep_date, nrow = 2)
+```
+
+### Total of Confirmed Cases by Age Bracket (Visualised)
+```{r}
+inf_HH %>% select(age_group, amount_case) %>%
+  group_by(age_group) %>%
+  summarise(sum = sum(amount_case)) %>%
+  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col()
+```
+### Total of Confirmed Cases by Sex
 ```{r}
 inf_HH %>%
   group_by(sex) %>% 
   transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
   slice_tail() %>% 
   arrange(desc(total_of_confirmed_cases))
+```
+
+### Cumulative Total of Confirmed Cases by Sex (Visualised)
+By `ref_date`:
+```{r}
+sex_ref_date <- df_sex_ref_date()
+
+sex_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area()
+
+sexplot_ref_date <- sex_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
+```
+### Total by Sex Side-by-Side (Visualised)
+```{r}
+grid.arrange(cum_tot_ref_date, sexplot_ref_date, nrow = 2)
+```
+
+By `rep_date`:
+```{r}
+sex_rep_date <- df_sex_rep_date()
+
+sex_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area()
+
+sexplot_rep_date <- sex_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
+```
+
+### Total by Sex Side-by-Side (Visualised)
+```{r}
+grid.arrange(cum_tot_rep_date, sexplot_rep_date, nrow = 2)
+```
+
+## 2.2 Cumulative Deaths
+
+```{r}
+inf_HH %>%
+  transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
+  slice_tail()
+```
+
+### Cumulative Total of Confirmed Deaths (Visualised)
+By `ref_date`:
+```{r}
+inf_HH %>% select(ref_date, amount_death) %>%
+  arrange(ref_date) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_death = sum(amount_death)) %>%
+  mutate(cumulative_deaths = cumsum(amount_death)) %>%
+  ggplot(aes(ref_date, cumulative_deaths)) + geom_area()
+
+cum_tot_ref_date_deaths <- inf_HH %>% select(ref_date, amount_death) %>%
+  arrange(ref_date) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_death = sum(amount_death)) %>%
+  mutate(cumulative_deaths = cumsum(amount_death)) %>%
+  ggplot(aes(ref_date, cumulative_deaths)) + geom_area()
+
+```
+
+By `rep_date`:
+```{r}
+inf_HH %>% select(rep_date, amount_death) %>%
+  arrange(rep_date) %>% 
+  group_by(rep_date) %>% 
+  summarise(amount_death = sum(amount_death)) %>%
+  mutate(cumulative_deaths = cumsum(amount_death)) %>%
+  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
+
+cum_tot_rep_date_deaths <- inf_HH %>% select(rep_date, amount_death) %>%
+  arrange(rep_date) %>% 
+  group_by(rep_date) %>% 
+  summarise(amount_death = sum(amount_death)) %>%
+  mutate(cumulative_deaths = cumsum(amount_death)) %>%
+  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
+
+```
+#### Sorted By Age Group Descending
+```{r}
+inf_HH %>% 
+  group_by(age_group) %>% 
+  transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_deaths))
+```
+
+### Cumulative Total of Confirmed Deaths by Age Bracket
+By `ref_date`:
+```{r}
+AAll_ref_date_deaths <- df_age_brackets_ref_date_deaths()
+
+AAll_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area()
+
+AAllplot_ref_date_deaths <- AAll_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
+```
+### Total and by Age Bracket - Side-by-Side
+```{r}
+grid.arrange(cum_tot_ref_date_deaths, AAllplot_ref_date_deaths, nrow = 2)
+```
+
+By `rep_date`:
+```{r}
+AAll_rep_date_deaths <- df_age_brackets_rep_date_deaths()
+
+AAll_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area()
+
+AAllplot_rep_date_deaths <- AAll_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
+```
+
+### Total and by Age Bracket - Side-by-Side
+```{r}
+grid.arrange(cum_tot_rep_date_deaths, AAllplot_rep_date_deaths, nrow = 2)
+```
+#### Sorted by Sex
+```{r}
+inf_HH %>%
+  group_by(sex) %>% 
+  transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_deaths))
+```
+
+### Cumulative Total of Confirmed Deaths by Sex (Visualised)
+By `ref_date`:
+```{r}
+sex_ref_date_deaths <- df_sex_ref_date_deaths()
+
+sex_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area()
+
+sexplot_ref_date_deaths <- sex_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
+```
+### Total by Sex Side-by-Side (Visualised)
+```{r}
+grid.arrange(cum_tot_ref_date_deaths, sexplot_ref_date_deaths, nrow = 2)
+```
+
+By `rep_date`:
+```{r}
+sex_rep_date_deaths <- df_sex_rep_date_deaths()
+
+sex_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area()
+
+sexplot_rep_date_deaths <- sex_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
+```
+
+### Total by Sex Side-by-Side (Visualised)
+```{r}
+grid.arrange(cum_tot_rep_date_deaths, sexplot_rep_date_deaths, nrow = 2)
+```
+
+## 2.2 Cumulative Recoveries
+
+```{r}
+inf_HH %>%
+  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
+  slice_tail()
+```
+
+### Cumulative Total of Confirmed Recoveries (Visualised)
+By `ref_date`
+```{r}
+inf_HH %>% select(ref_date, amount_recovery) %>%
+  arrange(ref_date) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>%
+  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
+  ggplot(aes(ref_date, cumulative_deaths)) + geom_area()
+
+cum_tot_ref_date_recoveries <- inf_HH %>% select(ref_date, amount_recovery) %>%
+  arrange(ref_date) %>% 
+  group_by(ref_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>%
+  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
+  ggplot(aes(ref_date, cumulative_deaths)) + geom_area()
+
+```
+
+By `rep_date`
+```{r}
+inf_HH %>% select(rep_date, amount_recovery) %>%
+  arrange(rep_date) %>% 
+  group_by(rep_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>%
+  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
+  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
+
+cum_tot_rep_date_recoveries <- inf_HH %>% select(rep_date, amount_recovery) %>%
+  arrange(rep_date) %>% 
+  group_by(rep_date) %>% 
+  summarise(amount_recovery = sum(amount_recovery)) %>%
+  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
+  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
+```
+
+#### Sorted by Age Bracket Descending
+```{r}
+inf_HH %>%
+  group_by(age_group) %>% 
+  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
+  slice_tail() %>%
+  arrange(desc(total_of_confirmed_recoveries))
+```
+
+### Cumulative Total of Confirmed Deaths by Age Bracket
+By `ref_date`:
+```{r}
+AAll_ref_date_recoveries <- df_age_brackets_ref_date_recoveries()
+
+AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area()
+
+AAllplot_ref_date_recoveries <- AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
+```
+### Total and by Age Bracket - Side-by-Side
+```{r}
+grid.arrange(cum_tot_ref_date_recoveries, AAllplot_ref_date_recoveries, nrow = 2)
+```
+
+By `rep_date`:
+```{r}
+AAll_ref_date_recoveries <- df_age_brackets_ref_date_recoveries()
+
+AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area()
+
+AAllplot_rep_date_recoveries <- AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
+```
+
+### Total and by Age Bracket - Side-by-Side
+```{r}
+grid.arrange(cum_tot_rep_date_recoveries, AAllplot_rep_date_recoveries, nrow = 2)
+```
+
+#### Sorted by Sex
+```{r}
+inf_HH %>%
+  group_by(sex) %>% 
+  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
+  slice_tail() %>% 
+  arrange(desc(total_of_confirmed_recoveries))
+```
+
+### Cumulative Total of Confirmed Recoveries by Sex (Visualised)
+By `ref_date`:
+```{r}
+sex_ref_date_recoveries <- df_sex_ref_date_recoveries()
+
+sex_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area()
+
+sexplot_ref_date_recoveries <- sex_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
+```
+### Total by Sex Side-by-Side (Visualised)
+```{r}
+grid.arrange(cum_tot_ref_date_recoveries, sexplot_ref_date_recoveries, nrow = 2)
+```
+By `rep_date`:
+```{r}
+sex_rep_date_recoveries <- df_sex_rep_date_recoveries()
+
+sex_rep_date_recoveries %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area()
+
+sexplot_rep_date_recoveries <- sex_rep_date_recoveries %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
+```
+
+### Total by Sex Side-by-Side (Visualised)
+```{r}
+grid.arrange(cum_tot_rep_date_recoveries, sexplot_rep_date_recoveries, nrow = 2)
 ```
