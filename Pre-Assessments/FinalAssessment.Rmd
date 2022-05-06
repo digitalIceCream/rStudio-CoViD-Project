@@ -1,15 +1,24 @@
 ---
-title: "CoViD_in_HH_final_v0.1"
+title: "Final Assessment"
 author: "John-Philipp Vogt"
-date: "29/04/2022"
-output: html_document
+date: "06/05/2022"
+output: ioslides_presentation
 ---
 
-# 0 Packages and Scripts
+# CoViD in Hamburg
 
-Script runs: Load `tidyverse`, load `RKI_imptran`, `RKI_geofil`, `df_age_bracket_ref_date` and `df_age_bracket_rep_date`.
+## Objectives:
 
-```{r}
+* Overview
+  * Cases
+  * Deaths
+  * Daily Cases
+  * Daily Deaths
+  
+* Mortality
+
+```{r init, include=FALSE}
+
 library(tidyverse)
 library(gridExtra)
 
@@ -626,66 +635,30 @@ df_sex_rep_date_recoveries <- function(){
 }
 ```
 
-# 1 Introducing data to R
-
-Scripts runs: Load current `.csv`, run `RKI_imptran` and `RKI_geofil`.
-
-```{r}
+```{r load csv, include=FALSE}
 inf_FRG <- RKI_imptran("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Aktuell_Deutschland_SarsCov2_Infektionen.csv")
 
 inf_HH <- RKI_geofil(inf_FRG, 2000)
 ```
 
-The following scripts load the `all_new_cases.csv`, which has to be computed after each `git pull` from the master-repo. The wd has to be the dir that contains the dataset.
-The `all_new_cases.csv` may be computed with `AWK` with
-
-```{AWK eval=FALSE, include=FALSE}
- awk -F, -f all_new_cases_FRG.awk 2*.csv > all_new_cases.csv
-```
-
-where `command.awk` is
-
-```{AWK eval=FALSE, include=FALSE}
-BEGIN{printf "IdLandkreis,Altersgruppe,Geschlecht,Meldedatum,Refdatum,IstErkrankungsbeginn,NeuerFall,NeuerTodesfall,NeuGenesen,AnzahlFall,AnzahlTodesfall,AnzahlGenesen\n"} $7 == "-1" || $7 == "1" {print $0}
-```
-
-. NB: The AWK-script is computationally rather intensive!
-Then `RKI_imptran` can be invoked to read and transform `all_new_cases.csv`.
-
-```{r}
+```{r load csv2, include=FALSE}
 inf_FRG_new_cases <- RKI_imptran("/home/jpv/Documents/Uni/D.Proc.Vis/rStudioWD/covid_frg_project/SARS-CoV-2_Infektionen_in_Deutschland/Archiv/all_new_cases.csv")
 ```
 
-After, to filter for desired geo-location, run:
-
-```{r}
+```{r filter csv, include=FALSE}
 inf_HH_new_cases <- RKI_geofil(inf_FRG_new_cases, 2000)
 ```
 
-Remark: The following are computed for Hamburg only.
-
-# 2 Rebuilding metrics
-
-Following metrics are rebuilt:
-
-1) Cumulative cases, deaths, and recoveries up to now
-2) New cases, deaths, and recoveries each day
-3) Active cases currently, and per day since start of recorded cases
-
-Where sensible they are split up in by `ref_date` and `rep_date`
-
-## 2.1 Cumulative Cases
+## Overview :: Cases
 
 ### Cumulative Total of Confirmed Cases
-```{r}
+```{r Cumulative Total of Confirmed Cases, echo=FALSE}
 inf_HH %>%
   transmute(total_of_confirmed_cases = sum(amount_case)) %>%
   slice_tail()
 ```
-
-### Cumulative Total of Confirmed Cases (Visualised)
-By `ref_date`:
-```{r}
+## Overview :: Cases
+```{r fig.align="center", echo=FALSE, fig.width=10}
 inf_HH %>% select(ref_date, amount_case) %>%
   arrange(ref_date) %>% 
   group_by(ref_date) %>% 
@@ -695,42 +668,12 @@ inf_HH %>% select(ref_date, amount_case) %>%
   labs(x = "Time", y = "Cumulative Cases", title = "Cumulative Cases over Time") +
   scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
   scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
-
-cum_tot_ref_date <- inf_HH %>% select(ref_date, amount_case) %>%
-  arrange(ref_date) %>% 
-  group_by(ref_date) %>% 
-  summarise(amount_case = sum(amount_case)) %>%
-  mutate(cumulative_cases = cumsum(amount_case)) %>%
-  ggplot(aes(ref_date, cumulative_cases)) + geom_area() +
-  labs(x = "Time", y = "Cumulative Cases", title = "Cumulative Cases over Time") +
-  scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
-  scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 ```
-By `rep_date`:
-```{r}
-inf_HH %>% select(rep_date, amount_case) %>%
-  arrange(rep_date) %>% 
-  group_by(rep_date) %>% 
-  summarise(amount_case = sum(amount_case)) %>%
-  mutate(cumulative_cases = cumsum(amount_case)) %>%
-  ggplot(aes(rep_date, cumulative_cases)) + geom_area() +
-  labs(x = "Time", y = "Cumulative Cases", title = "Cumulative Cases over Time") +
-  scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
-  scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 
-cum_tot_rep_date <- inf_HH %>% select(rep_date, amount_case) %>%
-  arrange(rep_date) %>% 
-  group_by(rep_date) %>% 
-  summarise(amount_case = sum(amount_case)) %>%
-  mutate(cumulative_cases = cumsum(amount_case)) %>%
-  ggplot(aes(rep_date, cumulative_cases)) + geom_area() +
-  labs(x = "Time", y = "Cumulative Cases", title = "Cumulative Cases over Time") +
-  scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
-  scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
-```
+## Overview :: Cases :: By Age Brackets
 
 ### Cumulative Total of Confirmed Cases by Age Bracket
-```{r}
+```{r echo=FALSE}
 inf_HH %>%
   group_by(age_group) %>% 
   transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
@@ -738,10 +681,12 @@ inf_HH %>%
   arrange(desc(total_of_confirmed_cases))
 ```
 
-### Cumulative Total of Confirmed Cases by Age Bracket (Visualised)
-by `ref_date`:
-```{r fig.width=10}
+## Overview :: Cases :: By Age Brackets
+
+```{r include=FALSE}
 AAll_ref_date <- df_age_brackets_ref_date()
+```
+```{r fig.align="center", echo=FALSE, fig.width=10}
 
 AAll_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area() +
   labs(x = "Time", y = "Cumulative Cases", fill = "Age Brackets", title = "Cumulative Cases over Time by Age Bracket") +
@@ -750,35 +695,22 @@ AAll_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + g
 
 AAllplot_ref_date <- AAll_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
 ```
-### Total and by Age Bracket - Side-by-Side
-```{r}
-grid.arrange(cum_tot_ref_date, AAllplot_ref_date, nrow = 2)
-```
 
-by `rep_date`:
-```{r}
-AAll_rep_date <- df_age_brackets_rep_date()
+## Overview :: Cases :: By Age Brackets
 
-AAll_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area() +
-  labs(x = "Time", y = "Cumulative Cases", fill = "Age Brackets", title = "Cumulative Cases over Time by Age Bracket") +
-  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
-
-AAllplot_rep_date <- AAll_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
-```
-### Total and by Age Bracket - Side-by-Side
-```{r}
-grid.arrange(cum_tot_rep_date, AAllplot_rep_date, nrow = 2)
-```
-
-### Total of Confirmed Cases by Age Bracket (Visualised)
-```{r}
+```{r fig.align="center", echo=FALSE, fig.width=10}
 inf_HH %>% select(age_group, amount_case) %>%
   group_by(age_group) %>%
   summarise(sum = sum(amount_case)) %>%
-  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col()
+  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col() +
+  labs(x = "Age Brackets", y = "Sum of Cases", title = "Sum of Cases by Age Bracket")
 ```
+
+## Overview :: Cases :: By Sex
+
 ### Total of Confirmed Cases by Sex
-```{r}
+
+```{r echo=0}
 inf_HH %>%
   group_by(sex) %>% 
   transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
@@ -786,47 +718,31 @@ inf_HH %>%
   arrange(desc(total_of_confirmed_cases))
 ```
 
-### Cumulative Total of Confirmed Cases by Sex (Visualised)
-By `ref_date`:
-```{r}
-sex_ref_date <- df_sex_ref_date()
+## Overview :: Cases :: By Sex
 
+```{r include=FALSE}
+sex_ref_date <- df_sex_ref_date()
+```
+```{r fig.align="center", echo=FALSE, fig.width=10}
 sex_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area() +
   labs(x = "Time", y = "Cumulative Cases", fill = "Age Brackets", title = "Cumulative Cases over Time by Sex") +
-  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 
 sexplot_ref_date <- sex_ref_date %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
 ```
-### Total by Sex Side-by-Side (Visualised)
-```{r}
-grid.arrange(cum_tot_ref_date, sexplot_ref_date, nrow = 2)
-```
 
-By `rep_date`:
-```{r}
-sex_rep_date <- df_sex_rep_date()
+## Overview :: Deaths
 
-sex_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area()
-
-sexplot_rep_date <- sex_rep_date %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
-```
-
-### Total by Sex Side-by-Side (Visualised)
-```{r}
-grid.arrange(cum_tot_rep_date, sexplot_rep_date, nrow = 2)
-```
-
-## 2.2 Cumulative Deaths
-
-```{r}
+```{r echo=FALSE}
 inf_HH %>%
   transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
   slice_tail()
 ```
 
-### Cumulative Total of Confirmed Deaths (Visualised)
-By `ref_date`:
-```{r}
+## Overview :: Deaths
+
+```{r fig.align="center", echo=FALSE, fig.width=10}
 inf_HH %>% select(ref_date, amount_death) %>%
   arrange(ref_date) %>% 
   group_by(ref_date) %>% 
@@ -834,37 +750,13 @@ inf_HH %>% select(ref_date, amount_death) %>%
   mutate(cumulative_deaths = cumsum(amount_death)) %>%
   ggplot(aes(ref_date, cumulative_deaths)) + geom_area() +
   labs(x = "Time", y = "Cumulative Deaths", title = "Cumulative Deaths over Time") +
-  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
-
-cum_tot_ref_date_deaths <- inf_HH %>% select(ref_date, amount_death) %>%
-  arrange(ref_date) %>% 
-  group_by(ref_date) %>% 
-  summarise(amount_death = sum(amount_death)) %>%
-  mutate(cumulative_deaths = cumsum(amount_death)) %>%
-  ggplot(aes(ref_date, cumulative_deaths)) + geom_area() +
-  labs(x = "Time", y = "Cumulative Deaths", title = "Cumulative Deaths over Time") +
-  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 ```
 
-By `rep_date`:
-```{r}
-inf_HH %>% select(rep_date, amount_death) %>%
-  arrange(rep_date) %>% 
-  group_by(rep_date) %>% 
-  summarise(amount_death = sum(amount_death)) %>%
-  mutate(cumulative_deaths = cumsum(amount_death)) %>%
-  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
+## Overview :: Deaths :: By Age Bracket
 
-cum_tot_rep_date_deaths <- inf_HH %>% select(rep_date, amount_death) %>%
-  arrange(rep_date) %>% 
-  group_by(rep_date) %>% 
-  summarise(amount_death = sum(amount_death)) %>%
-  mutate(cumulative_deaths = cumsum(amount_death)) %>%
-  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
-
-```
-#### Sorted By Age Group Descending
-```{r}
+```{r echo=FALSE}
 inf_HH %>% 
   group_by(age_group) %>% 
   transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
@@ -872,44 +764,32 @@ inf_HH %>%
   arrange(desc(total_of_confirmed_deaths))
 ```
 
-### Cumulative Total of Confirmed Deaths by Age Bracket
-By `ref_date`:
-```{r}
-AAll_ref_date_deaths <- df_age_brackets_ref_date_deaths()
+## Overview :: Deaths :: By Age Bracket
 
-AAll_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area()
+```{r include=FALSE}
+AAll_ref_date_deaths <- df_age_brackets_ref_date_deaths()
+```
+```{r fig.align="center", echo=FALSE, fig.width=10}
+AAll_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area() +
+  labs(x = "Time", y = "Cumulative Deaths", fill = "Age Bracket", title = "Cumulative Deaths over Time By Age Bracket") +
+  scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 
 AAllplot_ref_date_deaths <- AAll_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
 ```
-### Total and by Age Bracket - Side-by-Side
-```{r}
-grid.arrange(cum_tot_ref_date_deaths, AAllplot_ref_date_deaths, nrow = 2)
-```
 
-By `rep_date`:
-```{r}
-AAll_rep_date_deaths <- df_age_brackets_rep_date_deaths()
+## Overview :: Deaths :: By Age Bracket
 
-AAll_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area()
-
-AAllplot_rep_date_deaths <- AAll_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
-```
-
-### Total and by Age Bracket - Side-by-Side
-```{r}
-grid.arrange(cum_tot_rep_date_deaths, AAllplot_rep_date_deaths, nrow = 2)
-```
-
-### Total of Confirmed Deaths by Age Bracket (Visualised)
-```{r}
+```{r fig.align="center", echo=FALSE, fig.width=10}
 inf_HH %>% select(age_group, amount_death) %>%
   group_by(age_group) %>%
   summarise(sum = sum(amount_death)) %>%
-  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col()
+  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col() +
+  labs(x = "Time", y = "Cumulative Deaths", fill = "Age Bracket", title = "Cumulative Deaths over Time By Age Bracket")
 ```
 
-#### Sorted by Sex
-```{r}
+## Overview :: Deaths :: By Sex
+
+```{r echo=FALSE}
 inf_HH %>%
   group_by(sex) %>% 
   transmute(total_of_confirmed_deaths = cumsum(amount_death)) %>%
@@ -917,242 +797,41 @@ inf_HH %>%
   arrange(desc(total_of_confirmed_deaths))
 ```
 
-### Cumulative Total of Confirmed Deaths by Sex (Visualised)
-By `ref_date`:
-```{r}
-sex_ref_date_deaths <- df_sex_ref_date_deaths()
+## Overview :: Deaths :: By Sex
 
-sex_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area()
+```{r include=FALSE}
+sex_ref_date_deaths <- df_sex_ref_date_deaths()
+```
+```{r fig.align="center", echo=FALSE, fig.width=10}
+sex_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area() +
+  labs(x = "Time", y = "Cumulative Deaths", fill = "Age Bracket", title = "Cumulative Deaths over Time By Sex") +
+  scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 
 sexplot_ref_date_deaths <- sex_ref_date_deaths %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
 ```
-### Total by Sex Side-by-Side (Visualised)
-```{r}
-grid.arrange(cum_tot_ref_date_deaths, sexplot_ref_date_deaths, nrow = 2)
-```
 
-By `rep_date`:
-```{r}
-sex_rep_date_deaths <- df_sex_rep_date_deaths()
+## Daily Cases
 
-sex_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area()
-
-sexplot_rep_date_deaths <- sex_rep_date_deaths %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
-```
-
-### Total by Sex Side-by-Side (Visualised)
-```{r}
-grid.arrange(cum_tot_rep_date_deaths, sexplot_rep_date_deaths, nrow = 2)
-```
-
-## 2.2 Cumulative Recoveries
-
-```{r}
-inf_HH %>%
-  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
-  slice_tail()
-```
-
-### Cumulative Total of Confirmed Recoveries (Visualised)
-By `ref_date`
-```{r}
-inf_HH %>% select(ref_date, amount_recovery) %>%
-  arrange(ref_date) %>% 
-  group_by(ref_date) %>% 
-  summarise(amount_recovery = sum(amount_recovery)) %>%
-  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
-  ggplot(aes(ref_date, cumulative_deaths)) + geom_area()
-
-cum_tot_ref_date_recoveries <- inf_HH %>% select(ref_date, amount_recovery) %>%
-  arrange(ref_date) %>% 
-  group_by(ref_date) %>% 
-  summarise(amount_recovery = sum(amount_recovery)) %>%
-  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
-  ggplot(aes(ref_date, cumulative_deaths)) + geom_area()
-
-```
-
-By `rep_date`
-```{r}
-inf_HH %>% select(rep_date, amount_recovery) %>%
-  arrange(rep_date) %>% 
-  group_by(rep_date) %>% 
-  summarise(amount_recovery = sum(amount_recovery)) %>%
-  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
-  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
-
-cum_tot_rep_date_recoveries <- inf_HH %>% select(rep_date, amount_recovery) %>%
-  arrange(rep_date) %>% 
-  group_by(rep_date) %>% 
-  summarise(amount_recovery = sum(amount_recovery)) %>%
-  mutate(cumulative_deaths = cumsum(amount_recovery)) %>%
-  ggplot(aes(rep_date, cumulative_deaths)) + geom_area()
-```
-
-#### Sorted by Age Bracket Descending
-```{r}
-inf_HH %>%
-  group_by(age_group) %>% 
-  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
-  slice_tail() %>%
-  arrange(desc(total_of_confirmed_recoveries))
-```
-
-### Cumulative Total of Confirmed Deaths by Age Bracket
-By `ref_date`:
-```{r}
-AAll_ref_date_recoveries <- df_age_brackets_ref_date_recoveries()
-
-AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area()
-
-AAllplot_ref_date_recoveries <- AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
-```
-### Total and by Age Bracket - Side-by-Side
-```{r}
-grid.arrange(cum_tot_ref_date_recoveries, AAllplot_ref_date_recoveries, nrow = 2)
-```
-
-By `rep_date`:
-```{r}
-AAll_ref_date_recoveries <- df_age_brackets_ref_date_recoveries()
-
-AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area()
-
-AAllplot_rep_date_recoveries <- AAll_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = age_group)) + geom_area(show.legend = FALSE)
-```
-
-### Total and by Age Bracket - Side-by-Side
-```{r}
-grid.arrange(cum_tot_rep_date_recoveries, AAllplot_rep_date_recoveries, nrow = 2)
-```
-
-### Total of Confirmed Recoveries by Age Bracket (Visualised)
-```{r}
-inf_HH %>% select(age_group, amount_recovery) %>%
-  group_by(age_group) %>%
-  summarise(sum = sum(amount_recovery)) %>%
-  ggplot(aes(fct_reorder(age_group, sum), sum)) + geom_col()
-```
-
-#### Sorted by Sex
-```{r}
-inf_HH %>%
-  group_by(sex) %>% 
-  transmute(total_of_confirmed_recoveries = cumsum(amount_recovery)) %>%
-  slice_tail() %>% 
-  arrange(desc(total_of_confirmed_recoveries))
-```
-
-### Cumulative Total of Confirmed Recoveries by Sex (Visualised)
-By `ref_date`:
-```{r}
-sex_ref_date_recoveries <- df_sex_ref_date_recoveries()
-
-sex_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area()
-
-sexplot_ref_date_recoveries <- sex_ref_date_recoveries %>% ggplot(aes(x = ref_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
-```
-### Total by Sex Side-by-Side (Visualised)
-```{r}
-grid.arrange(cum_tot_ref_date_recoveries, sexplot_ref_date_recoveries, nrow = 2)
-```
-By `rep_date`:
-```{r}
-sex_rep_date_recoveries <- df_sex_rep_date_recoveries()
-
-sex_rep_date_recoveries %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area()
-
-sexplot_rep_date_recoveries <- sex_rep_date_recoveries %>% ggplot(aes(x = rep_date, y = cum_cases, fill = sex)) + geom_area(show.legend = FALSE)
-```
-
-### Total by Sex Side-by-Side (Visualised)
-```{r}
-grid.arrange(cum_tot_rep_date_recoveries, sexplot_rep_date_recoveries, nrow = 2)
-```
-
-# 3 Daily Events
-## 3.1 New Cases
-by `ref_date`:
-```{r}
-inf_HH_new_cases %>% 
-    select(ref_date, new_case, starts_with("am")) %>% 
-    filter(amount_death == 0, amount_recovery == 0) %>% 
-    group_by(ref_date) %>% 
-    summarise(daily_new_cases = sum(amount_case)) %>% 
-    arrange(ref_date) %>% 
-    ggplot(aes(ref_date, daily_new_cases)) + geom_area()
-```
-
-```{r}
+```{r fig.align="center", echo=FALSE, fig.width=10}
 inf_HH %>% select(ref_date, new_case, amount_case) %>% 
     filter(new_case != -1) %>% 
     group_by(ref_date) %>% 
     summarise(daily_cases = sum(amount_case)) %>% 
-    ggplot(aes(ref_date, daily_cases)) + geom_area()
+    ggplot(aes(ref_date, daily_cases)) + geom_area() +
+    labs(x = "Time", y = "Cases", title = "New Cases per Day") +
+    scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 ```
 
+## Daily Deaths
 
-by `rep_date`:
-```{r}
-inf_HH_new_cases %>% 
-    select(rep_date, new_case, starts_with("am")) %>% 
-    filter(amount_death == 0, amount_recovery == 0) %>% 
-    group_by(rep_date) %>% 
-    summarise(daily_new_cases = sum(amount_case)) %>% 
-    arrange(rep_date) %>% 
-    ggplot(aes(rep_date, daily_new_cases)) + geom_area()
-```
-
-```{r}
-inf_HH %>% select(rep_date, new_case, amount_case) %>% 
-    filter(new_case != -1) %>% 
-    group_by(rep_date) %>% 
-    summarise(daily_cases = sum(amount_case)) %>% 
-    ggplot(aes(rep_date, daily_cases)) + geom_area()
-```
-## 3.2 New Deaths
-by `ref_date`:
-```{r}
+```{r fig.align="center", echo=FALSE, fig.width=10}
 inf_HH %>% select(ref_date, amount_death) %>% 
     filter(amount_death != 0) %>% 
     group_by(ref_date) %>% 
     summarise(daily_deaths = sum(amount_death)) %>%
-    ggplot(aes(ref_date, daily_deaths)) + geom_area()
-```
-
-by `rep_date`:
-```{r}
-inf_HH %>% select(rep_date, amount_death) %>% 
-    filter(amount_death != 0) %>% 
-    group_by(rep_date) %>% 
-    summarise(daily_deaths = sum(amount_death)) %>%
-    ggplot(aes(rep_date, daily_deaths)) + geom_area()
-```
-
-
-# 4 Active Cases
-
-by `ref_date`:
-```{r}
-inf_HH %>% select(ref_date, new_case, starts_with("amount")) %>% 
-  arrange(ref_date) %>% 
-  mutate(cumulative_cases = cumsum(amount_case)) %>% 
-  mutate(cumulative_deaths = cumsum(amount_death)) %>% 
-  mutate(cumulative_recoveries = cumsum(amount_recovery)) %>% 
-  mutate(delta = cumulative_cases - (cumulative_deaths + cumulative_recoveries)) %>%
-  select(ref_date, starts_with("c"), delta) %>%
-  slice_tail()
-```
-by `rep_date`:
-```{r}
-inf_HH %>% select(rep_date, new_case, starts_with("amount")) %>% 
-  arrange(rep_date) %>% 
-  mutate(cumulative_cases = cumsum(amount_case)) %>% 
-  mutate(cumulative_deaths = cumsum(amount_death)) %>% 
-  mutate(cumulative_recoveries = cumsum(amount_recovery)) %>% 
-  mutate(delta = cumulative_cases - (cumulative_deaths + cumulative_recoveries)) %>%
-  select(rep_date, starts_with("c"), delta) %>% 
-  slice_tail()
+    ggplot(aes(ref_date, daily_deaths)) + geom_area() +
+    labs(x = "Time", y = "Deaths", title = "New Deaths per Day") +
+    scale_x_date(date_breaks = "2 month", date_labels = "%m-%y")
 ```
 
 ## Mortality
@@ -1208,5 +887,7 @@ mort_fin_sex_final <- mort_fin_sex %>%
 mort_fin_sex %>% 
     mutate(Male_Share = (death_sex_M / total_of_confirmed_deaths)*100) %>% 
     mutate(Female_Share = (death_sex_W / total_of_confirmed_deaths)*100) %>% 
-    rename(Ages = age_group...1, Death_Toll = total_of_confirmed_deaths, Mortality = mortality_in_percent, Male_Deaths = death_sex_M, Female_Deaths = death_sex_W)
+    rename(Ages = age_group...1, Death_Toll = total_of_confirmed_deaths, Mortality = mortality_in_percent, Male_Deaths = death_sex_M, Female_Deaths = death_sex_W) %>% 
+    arrange(desc(Mortality))
 ```
+

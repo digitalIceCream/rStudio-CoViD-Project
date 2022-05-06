@@ -2121,6 +2121,13 @@ which are “officially” declared (i.e. published) by the RKI. By
   group_by(ref_date) %&gt;% 
   summarise(amount_case = sum(amount_case)) %&gt;% arrange(desc(ref_date))</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibnJvdyI6MTksIm5jb2wiOjIsInN1bW1hcnkiOnsiQSB0aWJibGUiOlsiMTkgw5cgMiJdfX0sInJkZiI6Ikg0c0lBQUFBQUFBQUExMlNYMHJEUUJER3QybWpiYVJWNkFYRUJ4R2hlZENDdnBtSDZnR2tRdC9xbXFaYVRIZExrbUlmQlEvaENiUkpQWVNld1hzSW5xQnhOL010MUFTUzM4eDg4eWV6N0hWdmNPb01ITVpZbGRVczliV1Z5ZXliL2xYbm5CVVJWbUUxMXRCY0tMbXRESjNXVW14NzN4K2VUbGRreE5VWCtBeENYMEhQb0dmUU0rZ1o5QlI2Q2oyRm5rSmZRbDlDWDBKL1IveXQ4RXMvYnZzaGoyTmw3RzBFYXoyZUJJcHI5ZEl5ZmFyMVhydkVsMzNpNHBib2d5R044Q1R5TCtHZmdWM3dHRHdDRDhFNmVGRFNFYi80Slg2QzVXVUVud1ptR1F2QmVoU01oeU85RVBrN2ZDcm5JaG42UEE1SzlZMUlQcm1tUjFQMzBFZVo1L2tQSlZwNTZhQWMxWmU3NDBpVjBISDlhN2N0WjhsRUN0WE0wbGZETGhWWG9sSmdkeTcwOEZISGY1aUx4ODZKSGxESTlEUmh0emRzaTBaV3pZL1phTFVWaVB1Sk1DdmJJYjhMUWpndHRXU3hvenVMSmlJeG02aG83Q1l5NFNiUDhXVm9JblFWMW4rMUdZbUJFUU1BQUE9PSJ9 -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["ref_date"],"name":[1],"type":["date"],"align":["right"]},{"label":["amount_case"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"2022-05-05","2":"81"},{"1":"2022-05-04","2":"1485"},{"1":"2022-05-03","2":"612"},{"1":"2022-05-02","2":"390"},{"1":"2022-05-01","2":"155"},{"1":"2022-04-30","2":"224"},{"1":"2022-04-29","2":"250"},{"1":"2022-04-28","2":"42"},{"1":"2022-04-27","2":"23"},{"1":"2022-04-26","2":"20"},{"1":"2022-04-25","2":"13"},{"1":"2022-04-24","2":"12"},{"1":"2022-04-23","2":"11"},{"1":"2022-04-22","2":"3"},{"1":"2022-04-21","2":"9"},{"1":"2022-04-20","2":"12"},{"1":"2022-04-19","2":"3"},{"1":"2022-04-17","2":"1"},{"1":"2022-04-11","2":"-1"}],"options":{"columns":{"min":{},"max":[10],"total":[2]},"rows":{"min":[10],"max":[10],"total":[19]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>By <code>rep_date</code>:</p>
@@ -2301,6 +2308,13 @@ arrange(desc(rep_date))</code></pre>
   select(ref_date, starts_with(&quot;c&quot;), delta) %&gt;%
   slice_tail()</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibnJvdyI6MSwibmNvbCI6NSwic3VtbWFyeSI6eyJBIHRpYmJsZSI6WyIxIMOXIDUiXX19LCJyZGYiOiJINHNJQUFBQUFBQUFBMjFSUzA3RE1CQ2RwREhRU0syQ0VFc2tMcEJzS0JMTFZLbzRBQUtwdThvNExvMXc3Y3B4Q2tzT3c0NExjQTV1d0FYb0RWb21jWXlTaUpIc21YbHZ4dlB4M1d4K0ZjNURBQmhBNE9OTjBBVHljSDhiMzBDTmdBY0JEQ3Y5aXZSWnhhSWVWMEQ2OVpGQ0xaMUF3Z1F0Q2pTaUZoak1xT0dvOTNqcTVPbmxUMktUclorK0I5RDJweGVma3c2Lys0Yi9pa202NXE0WWFjQVR6WmVMckNwby9ZaVY2MUpRazIvNWd0RUM0eTErMnNJelRzM0tFZWN0UW5PbXRsem5mMWtrNDhMUVhoOURyVjRTMThzSWovK0cxd0hGQnZxSDNrSkM3SThtUzQwcGRpMmQ1NDdWeHVSSzRtTitzL0pPc3FkN1FGVEtxbmdXczFVcG4rUEpkVldoNXEyTUd0dHIyY1RXSExqTzNQYU91SHpLcGRzZEVmU1JpOFlaNDVUMWtNbEc1OUs0VVJBdEVxTU1kWEVoVThJaDlzLzN2MkpFZTc5cUFnQUEifQ== -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["ref_date"],"name":[1],"type":["date"],"align":["right"]},{"label":["cumulative_cases"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["cumulative_deaths"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["cumulative_recoveries"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["delta"],"name":[5],"type":["dbl"],"align":["right"]}],"data":[{"1":"2022-05-05","2":"554775","3":"2562","4":"486925","5":"65288"}],"options":{"columns":{"min":{},"max":[10],"total":[5]},"rows":{"min":[10],"max":[10],"total":[1]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>by <code>rep_date</code>:</p>
