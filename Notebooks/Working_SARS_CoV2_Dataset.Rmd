@@ -425,6 +425,8 @@ inf_HH_ex <- inf_HH %>% filter(between(rep_date, as.Date("2020-01-08"), as.Date(
 
 # 3 Chopping up data by time - 2020, 2021, 2022
 
+note by author: The following has not been used in the analysis.
+
 For working purposes it seem useful to chop up the data set into years, perhaps even months of each year.
 For this purpose the variable **ref_date** seems more appropriate, as it should reflect the actual date of infection, rather than the date of the reporting of it.
 Both variables, **ref_date** and **rep_date** are used to create the subsets.

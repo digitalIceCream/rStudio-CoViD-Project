@@ -891,3 +891,17 @@ mort_fin_sex %>%
     arrange(desc(Mortality))
 ```
 
+## What I have learned
+
+* Data Science and Visualisation basics
+* Basics for statistical analysis
+* Querying Data with R - the tidyverse mostly
+* basics in .(R)md
+* basics for AWK
+* basics in git
+
+## Final Slide
+
+### Sources:
+  * https://github.com/robert-koch-institut/SARS-CoV-2_Infektionen_in_Deutschland
+  * https://github.com/digitalIceCream/rStudio-CoViD-Project

@@ -7,7 +7,7 @@ output: html_document
 
 # 0 Packages and Scripts
 
-Script runs: Load `tidyverse`, load `RKI_imptran`, `RKI_geofil`, `df_age_bracket_ref_date` and `df_age_bracket_rep_date`.
+Script runs: Load `tidyverse` and `gridExtra` packages, load `RKI_imptran`, `RKI_geofil`, `df_age_bracket_ref_date`, `df_age_bracket_rep_date` and various other scripts.
 
 ```{r}
 library(tidyverse)
@@ -639,13 +639,13 @@ inf_HH <- RKI_geofil(inf_FRG, 2000)
 The following scripts load the `all_new_cases.csv`, which has to be computed after each `git pull` from the master-repo. The wd has to be the dir that contains the dataset.
 The `all_new_cases.csv` may be computed with `AWK` with
 
-```{AWK eval=FALSE, include=FALSE}
+```{AWK eval=FALSE, include=TRUE}
  awk -F, -f all_new_cases_FRG.awk 2*.csv > all_new_cases.csv
 ```
 
 where `command.awk` is
 
-```{AWK eval=FALSE, include=FALSE}
+```{AWK eval=FALSE, include=TRUE}
 BEGIN{printf "IdLandkreis,Altersgruppe,Geschlecht,Meldedatum,Refdatum,IstErkrankungsbeginn,NeuerFall,NeuerTodesfall,NeuGenesen,AnzahlFall,AnzahlTodesfall,AnzahlGenesen\n"} $7 == "-1" || $7 == "1" {print $0}
 ```
 
@@ -672,7 +672,7 @@ Following metrics are rebuilt:
 2) New cases, deaths, and recoveries each day
 3) Active cases currently, and per day since start of recorded cases
 
-Where sensible they are split up in by `ref_date` and `rep_date`
+Where sensible they are split up in by `ref_date` and `rep_date`.
 
 ## 2.1 Cumulative Cases
 
@@ -1157,7 +1157,7 @@ inf_HH %>% select(rep_date, new_case, starts_with("amount")) %>%
 
 ## Mortality
 
-```{r include=FALSE}
+```{r include=TRUE}
 cases_age <- inf_HH %>%
   group_by(age_group) %>% 
   transmute(total_of_confirmed_cases = cumsum(amount_case)) %>%
@@ -1171,7 +1171,7 @@ deaths_age <- inf_HH %>%
 mort <- bind_cols(cases_age, deaths_age)
 ```
 
-``` {r include=FALSE}
+``` {r include=TRUE}
 mort %>% 
   mutate(mortality_in_percent = (total_of_confirmed_deaths / total_of_confirmed_cases)*100) %>% 
   arrange(desc(total_of_confirmed_deaths)) %>% 
